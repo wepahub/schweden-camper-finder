@@ -96,7 +96,7 @@ function init() {
   scheduleMapResize();
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js?v=1.2").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=1.3").catch(() => {});
   }
 }
 
@@ -272,7 +272,7 @@ async function runSearch() {
   }
 
   updateCenterText();
-  els.status.textContent = `Suche im Umkreis von ${formatDistance(radius)} um ${currentPlaceLabel} …`;
+  els.status.textContent = `Suche ${formatDistance(radius)} um ${currentPlaceLabel} …`;
   els.results.innerHTML = '<p class="empty">Daten werden geladen …</p>';
 
   const showWarning = categories.some(c => ["parking", "church", "picnic"].includes(c));
