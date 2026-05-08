@@ -1,0 +1,16 @@
+{
+  "name": "Schweden Camper Finder",
+  "short_name": "Camper Finder",
+  "description": "OSM-basierte Suche nach WC, Wasser, Badeplätzen, Stellplätzen, Kirchen und Parkplätzen.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1714",
+  "theme_color": "#10251f",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

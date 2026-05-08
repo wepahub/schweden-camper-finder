@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10251f">
+  <title>Schweden Camper Finder</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        crossorigin="">
+  <link rel="stylesheet" href="css/style.css?v=1.2">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="title-block">
+        <h1>Schweden Camper Finder</h1>
+        <p id="statusText">Ort suchen, Standort laden oder Karte verschieben.</p>
+      </div>
+      <button id="locateBtn" class="round-btn" title="Mein Standort">📍</button>
+    </header>
+
+    <section class="searchbar" aria-label="Ortssuche">
+      <form id="placeForm" class="place-form">
+        <input id="placeInput" type="search" placeholder="Ort suchen, z. B. Uppsala, Karlskrona ..." autocomplete="off">
+        <button type="submit">Suchen</button>
+      </form>
+      <div id="placeResults" class="place-results hidden"></div>
+    </section>
+
+    <section class="controls" aria-label="Filter">
+      <div class="mode-row">
+        <button class="mode-btn" data-mode="toilet">🚻 WC jetzt</button>
+        <button class="mode-btn" data-mode="pause">🏖 Baden & Pause</button>
+        <button class="mode-btn" data-mode="evening">🌙 Abendplatz prüfen</button>
+        <button class="mode-btn" data-mode="supply">💧 Versorgung</button>
+      </div>
+
+      <div class="chip-row">
+        <button class="chip active" data-category="toilets">🚻 WC</button>
+        <button class="chip" data-category="water">💧 Wasser</button>
+        <button class="chip" data-category="camping">🏕 Stellplatz</button>
+        <button class="chip" data-category="bathing">🏖 Baden</button>
+        <button class="chip" data-category="church">⛪ Kirche</button>
+        <button class="chip" data-category="parking">🅿 Parkplatz</button>
+        <button class="chip" data-category="picnic">🧺 Pause</button>
+      </div>
+
+      <div class="radius-row">
+        <label for="radiusSelect">Radius</label>
+        <select id="radiusSelect">
+          <option value="1000">1 km</option>
+          <option value="3000">3 km</option>
+          <option value="5000" selected>5 km</option>
+          <option value="10000">10 km</option>
+          <option value="25000">25 km</option>
+        </select>
+        <button id="searchBtn" class="primary-btn">🔍 Um Kartenmitte suchen</button>
+      </div>
+    </section>
+
+    <main class="content">
+      <section class="map-wrap">
+        <div id="map"></div>
+        <div class="center-hint">＋ Suchzentrum</div>
+      </section>
+
+      <aside class="results-panel">
+        <div class="results-header">
+          <div>
+            <h2>Treffer</h2>
+            <p id="centerText">Suchzentrum: Kartenmitte</p>
+          </div>
+          <button id="showFavoritesBtn" class="small-btn">⭐ Favoriten</button>
+        </div>
+
+        <div id="warningBox" class="warning hidden">
+          Die App zeigt mögliche Orte. Bei Kirchen, Parkplätzen und Rastplätzen immer lokale Beschilderung prüfen.
+        </div>
+
+        <div id="resultsList" class="results-list">
+          <p class="empty">Noch keine Suche gestartet.</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <template id="resultItemTemplate">
+    <article class="result-card">
+      <div class="result-main">
+        <strong class="result-title"></strong>
+        <span class="result-meta"></span>
+        <span class="result-extra"></span>
+      </div>
+      <div class="result-actions">
+        <a class="maps-link" target="_blank" rel="noopener">Google Maps</a>
+        <button class="fav-btn">☆ Favorit</button>
+        <button class="note-btn">Notiz</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          crossorigin=""></script>
+  <script src="js/app.js?v=1.2"></script>
+</body>
+</html>
