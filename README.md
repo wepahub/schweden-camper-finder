@@ -1,4 +1,4 @@
-# Schweden Camper Finder v1.3
+# Schweden Camper Finder v1.5
 
 Änderungen gegenüber v1.1:
 
@@ -26,3 +26,17 @@ Wenn die alte Version am Handy noch erscheint:
 - Radius-Auswahl auf kleinen Bildschirmen sichtbar gemacht
 - Suchbutton gekürzt
 - App auf mobilen Geräten wieder normal scrollbar gemacht
+
+
+## Änderung v1.4
+
+- Kategorie `🛒 ICA Maxi` ergänzt
+- ICA Maxi wird über OSM-Supermärkte mit Name/Brand/Operator `ICA Maxi` gesucht
+- Spezialmodi `Versorgung`, `Baden & Pause` und `Abendplatz prüfen` können ICA Maxi mit anzeigen
+
+
+## Änderung v1.5
+
+- Kategorie `🏛 Museen` ergänzt (`tourism=museum`)
+- Kategorie `🥾 Wanderwege` ergänzt (`route=hiking`, `route=foot`, Wandernetzwerk-Tags)
+- Museen und Wanderwege sind eigene Buttons

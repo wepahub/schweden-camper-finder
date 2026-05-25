@@ -1,9 +1,9 @@
-const CACHE_NAME = "sweden-camper-finder-v1-3";
+const CACHE_NAME = "sweden-camper-finder-v1-5";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.3",
-  "./js/app.js?v=1.3",
+  "./css/style.css?v=1.5",
+  "./js/app.js?v=1.5",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];

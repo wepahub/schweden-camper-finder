@@ -48,6 +48,42 @@ const CATEGORIES = {
     queries: [["amenity", "parking"]],
     scoreBase: 30
   },
+  ica: {
+    label: "ICA Maxi",
+    icon: "🛒",
+    color: "#ef4444",
+    queries: [["shop", "supermarket"]],
+    extraFilter: tags => {
+      const values = [
+        tags.name,
+        tags.brand,
+        tags.operator,
+        tags["name:sv"],
+        tags["official_name"]
+      ].filter(Boolean).join(" ").toLowerCase();
+      return values.includes("ica maxi") || (values.includes("ica") && values.includes("maxi"));
+    },
+    scoreBase: 50
+  },
+  museum: {
+    label: "Museum",
+    icon: "🏛",
+    color: "#c084fc",
+    queries: [["tourism", "museum"]],
+    scoreBase: 45
+  },
+  hiking: {
+    label: "Wanderweg",
+    icon: "🥾",
+    color: "#84cc16",
+    queries: [["route", "hiking"], ["route", "foot"], ["network", "lwn"], ["network", "rwn"], ["network", "nwn"]],
+    extraFilter: tags => {
+      if (tags.route === "hiking" || tags.route === "foot") return true;
+      if (["lwn", "rwn", "nwn", "iwn"].includes(tags.network)) return true;
+      return false;
+    },
+    scoreBase: 35
+  },
   picnic: {
     label: "Pause",
     icon: "🧺",
@@ -59,9 +95,9 @@ const CATEGORIES = {
 
 const MODES = {
   toilet: ["toilets"],
-  pause: ["bathing", "picnic", "parking", "toilets", "water"],
-  evening: ["camping", "parking", "church", "picnic", "bathing", "toilets", "water"],
-  supply: ["toilets", "water"]
+  pause: ["bathing", "picnic", "parking", "toilets", "water", "ica", "museum", "hiking"],
+  evening: ["camping", "parking", "church", "picnic", "bathing", "toilets", "water", "ica"],
+  supply: ["toilets", "water", "ica"]
 };
 
 let map;
@@ -96,7 +132,7 @@ function init() {
   scheduleMapResize();
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js?v=1.3").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=1.5").catch(() => {});
   }
 }
 
