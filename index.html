@@ -100,11 +100,23 @@
       </div>
       <div class="result-actions">
         <a class="maps-link" target="_blank" rel="noopener">Google Maps</a>
+        <a class="osm-link" target="_blank" rel="noopener">OSM</a>
         <button class="fav-btn">☆ Favorit</button>
         <button class="note-btn">Notiz</button>
       </div>
     </article>
   </template>
+
+  <dialog id="noteDialog" class="note-dialog">
+    <form method="dialog">
+      <p id="noteDialogLabel" class="note-dialog-label"></p>
+      <textarea id="noteDialogText" class="note-dialog-textarea" rows="4" placeholder="Notiz eingeben …"></textarea>
+      <div class="note-dialog-actions">
+        <button value="cancel" class="note-dialog-cancel">Abbrechen</button>
+        <button value="save" class="note-dialog-save">Speichern</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           crossorigin=""></script>

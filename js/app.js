@@ -195,12 +195,12 @@ function bindUI() {
   });
 }
 
+let _resizeTimer;
 function scheduleMapResize() {
-  [0, 80, 240, 600, 1200].forEach(delay => {
-    setTimeout(() => {
-      if (map) map.invalidateSize({ pan: false });
-    }, delay);
-  });
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (map) map.invalidateSize({ pan: false });
+  }, 250);
 }
 
 function updateCenterText() {
@@ -510,9 +510,7 @@ function renderResults() {
 
   els.results.innerHTML = "";
 
-  visible
-    .sort((a, b) => a.distance - b.distance || b.score - a.score)
-    .forEach(place => {
+  visible.forEach(place => {
       const node = els.template.content.cloneNode(true);
       node.querySelector(".result-title").textContent = `${place.icon} ${place.name}`;
       node.querySelector(".result-meta").textContent = `${place.categoryLabel} · ${formatDistance(place.distance)} von der Kartenmitte`;
@@ -520,6 +518,9 @@ function renderResults() {
 
       const link = node.querySelector(".maps-link");
       link.href = place.googleMapsUrl;
+
+      const osmLink = node.querySelector(".osm-link");
+      osmLink.href = place.osmUrl;
 
       const favBtn = node.querySelector(".fav-btn");
       favBtn.textContent = place.favorite ? "★ Favorit" : "☆ Favorit";
@@ -571,17 +572,24 @@ function editNote(id) {
   const place = currentResults.find(r => r.id === id);
   if (!place) return;
 
-  const note = prompt(`Notiz zu ${place.name}:`, place.note || "");
-  if (note === null) return;
+  const dialog = document.getElementById("noteDialog");
+  document.getElementById("noteDialogLabel").textContent = `Notiz zu: ${place.name}`;
+  const textarea = document.getElementById("noteDialogText");
+  textarea.value = place.note || "";
 
-  place.note = note.trim();
+  dialog.showModal();
 
-  const favorites = getFavorites();
-  favorites[id] = { favorite: place.favorite, note: place.note };
-  if (!place.favorite && !place.note) delete favorites[id];
-  localStorage.setItem("scf:favorites", JSON.stringify(favorites));
+  dialog.onclose = () => {
+    if (dialog.returnValue !== "save") return;
+    place.note = textarea.value.trim();
 
-  renderResults();
+    const favorites = getFavorites();
+    favorites[id] = { favorite: place.favorite, note: place.note };
+    if (!place.favorite && !place.note) delete favorites[id];
+    localStorage.setItem("scf:favorites", JSON.stringify(favorites));
+
+    renderResults();
+  };
 }
 
 function getFavorites() {
