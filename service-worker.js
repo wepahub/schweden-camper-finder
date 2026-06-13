@@ -1,9 +1,9 @@
-const CACHE_NAME = "scf-v3-0";
+const CACHE_NAME = "scf-v3-1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=3.0",
-  "./js/app.js?v=3.0",
+  "./css/style.css?v=3.1",
+  "./js/app.js?v=3.1",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];
@@ -27,7 +27,6 @@ self.addEventListener("fetch", event => {
   if (url.hostname.includes("overpass") ||
       url.hostname.includes("openstreetmap.org") ||
       url.hostname.includes("nominatim") ||
-      url.hostname.includes("cartocdn.com") ||
       url.hostname.includes("unpkg.com")) return;
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
 });

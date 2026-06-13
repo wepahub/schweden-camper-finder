@@ -105,11 +105,10 @@ function initMap() {
   map = L.map("map", { zoomControl: true, preferCanvas: true })
     .setView([59.8586, 17.6389], 11);
 
-  // Dark map tiles (CARTO Dark Matter) — fits the dark green UI
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  // Standard OSM tiles — clearly readable for navigation
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    subdomains: "abcd",
-    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   // Marker cluster group (graceful fallback if plugin missing)
@@ -148,11 +147,11 @@ function drawRadius() {
   if (radiusCircle) map.removeLayer(radiusCircle);
   radiusCircle = L.circle(center, {
     radius,
-    color: "#4ade80",
-    weight: 1.5,
-    opacity: 0.6,
-    fillColor: "#4ade80",
-    fillOpacity: 0.06,
+    color: "#0e6b3d",
+    weight: 2,
+    opacity: 0.7,
+    fillColor: "#10b981",
+    fillOpacity: 0.08,
     interactive: false
   }).addTo(map);
 }
