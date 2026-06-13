@@ -1,4 +1,4 @@
-# Schweden Camper Finder v3.0
+# Schweden Camper Finder v3.1
 
 OSM-basierter Camper-Helfer für Schweden und Skandinavien: findet WC, Wasser, Stellplätze, Bademöglichkeiten, Kirchen, Parkplätze, Rastplätze, Lebensmittelgeschäfte (ICA Maxi hervorgehoben), Museen und Wanderwege.
 
@@ -24,6 +24,11 @@ service-worker.js
 Da ein Service Worker im Einsatz ist, beim ersten Besuch nach einem Update einmal:
 - Desktop: Strg + Shift + R (Hard Reload)
 - iPhone: Einstellungen → Safari → Verlauf und Websitedaten löschen, oder Homescreen-App neu hinzufügen
+
+## Neu in v3.1
+
+- Wieder die normale, gut lesbare OpenStreetMap-Karte (die dunkle Karte war zu unübersichtlich)
+- Marker, Fadenkreuz, Radius-Kreis und Zoom-Bedienung an die helle Karte angepasst
 
 ## Neu in v3.0
 
