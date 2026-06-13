@@ -1,6 +1,6 @@
-# Schweden Camper Finder v2.0
+# Schweden Camper Finder v3.0
 
-OSM-basierter Camper-Helfer für Schweden: findet WC, Wasser, Stellplätze, Bademöglichkeiten, Kirchen, Parkplätze, Rastplätze, ICA Maxi, Museen und Wanderwege.
+OSM-basierter Camper-Helfer für Schweden und Skandinavien: findet WC, Wasser, Stellplätze, Bademöglichkeiten, Kirchen, Parkplätze, Rastplätze, Lebensmittelgeschäfte (ICA Maxi hervorgehoben), Museen und Wanderwege.
 
 ## Dateien
 
@@ -15,28 +15,32 @@ service-worker.js
 
 ## GitHub Pages Deployment
 
-1. Repo anlegen (z. B. `schweden-camper-finder`)
-2. Alle Dateien hochladen — Ordnerstruktur beibehalten (`css/`, `js/`, `assets/`)
-3. Settings → Pages → Branch `main`, Ordner `/root`
-4. App läuft dann unter `https://DEINNAME.github.io/schweden-camper-finder/`
+1. Alle Dateien ins Repo-Root hochladen (Ordnerstruktur css/ js/ assets/ beibehalten)
+2. Settings → Pages → Branch main, Ordner /root
+3. App läuft unter https://DEINNAME.github.io/REPONAME/
 
-## Auf dem iPhone als App installieren
+## Nach Update: Cache leeren
 
-1. Safari öffnen → zur GitHub-Pages-URL navigieren
-2. Teilen-Symbol → „Zum Home-Bildschirm"
-3. Fertig
+Da ein Service Worker im Einsatz ist, beim ersten Besuch nach einem Update einmal:
+- Desktop: Strg + Shift + R (Hard Reload)
+- iPhone: Einstellungen → Safari → Verlauf und Websitedaten löschen, oder Homescreen-App neu hinzufügen
 
-## Alte Version entfernen (falls App am Handy noch cacht)
+## Neu in v3.0
 
-1. Homescreen-App löschen
-2. Safari → Einstellungen → Website-Daten → Seite löschen
-3. App erneut hinzufügen
+- **Dunkle Karte** (CARTO Dark Matter) passend zum App-Design
+- **Radius-Kreis** zeigt den Suchbereich direkt auf der Karte
+- **Marker-Clustering**: viele Treffer werden zu Zahlen-Bubbles gruppiert
+- **Liste ↔ Karte verbunden**: Tippen auf eine Ergebniskarte fliegt zur Karte; Marker-Klick hebt die Listenkarte hervor
+- **Lebensmittel-Kategorie** statt nur ICA Maxi: findet alle Supermärkte, ICA Maxi wird mit ⭐, grüner Umrandung und ganz oben hervorgehoben
+- **Himmelsrichtung + Pfeil** bei jeder Distanzangabe (z. B. ↗ 2,3 km NO)
+- **Öffnungsstatus** "jetzt geöffnet / geschlossen" bei einfachen Öffnungszeiten
+- **Treffer-Zähler** pro Kategorie-Chip nach der Suche
+- **Sortierung** umschaltbar zwischen Nähe und Bewertung
+- **Teilen-Button** pro Ort (native Share-Funktion am Handy)
+- **Abbruch & Timeout-Hinweis** wenn Overpass langsam ist
+- Nominatim-Suche auf Skandinavien beschränkt und auf 1 Anfrage/Sekunde gedrosselt
+- veraltetes apple-mobile-web-app-capable Meta-Tag ergänzt durch den neuen Standard
 
-## Änderungen v2.0
+## Datenquelle
 
-- Komplett neues Design: dunkles Waldgrün, leuchtender Akzent
-- Kategorie-Chips mit Farb-Dots
-- Ergebniskarten mit Icon-Badge und kontextbezogenen Badges (24/7, kostenlos, …)
-- Animierter Ladebalken
-- Elegantes Fadenkreuz auf der Karte
-- Alle Funktionen erhalten: Favoriten, Notizen, Schnellmodi, alle 10 Kategorien
+Alle Daten von OpenStreetMap über die Overpass-API. Angaben ohne Gewähr – bei Parkplätzen, Kirchen und Rastplätzen immer die Beschilderung vor Ort beachten.
