@@ -1,16 +1,16 @@
-const CACHE_NAME = "sweden-camper-finder-v1-5";
+const CACHE_NAME = "scf-v2-0";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.5",
-  "./js/app.js?v=1.5",
+  "./css/style.css",
+  "./js/app.js",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(APP_SHELL)));
 });
 
 self.addEventListener("activate", event => {
@@ -23,16 +23,6 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
-
-  if (
-    url.hostname.includes("overpass") ||
-    url.hostname.includes("openstreetmap.org") ||
-    url.hostname.includes("nominatim")
-  ) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
-  );
+  if (url.hostname.includes("overpass") || url.hostname.includes("openstreetmap.org") || url.hostname.includes("nominatim")) return;
+  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
 });

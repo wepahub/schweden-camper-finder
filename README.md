@@ -1,42 +1,42 @@
-# Schweden Camper Finder v1.5
+# Schweden Camper Finder v2.0
 
-Änderungen gegenüber v1.1:
+OSM-basierter Camper-Helfer für Schweden: findet WC, Wasser, Stellplätze, Bademöglichkeiten, Kirchen, Parkplätze, Rastplätze, ICA Maxi, Museen und Wanderwege.
 
-- Ortssuche ergänzt, z. B. Uppsala, Stockholm, Karlskrona
-- Suche verwendet jetzt immer die Kartenmitte, nicht automatisch den GPS-Standort
-- Button heißt jetzt „Um Kartenmitte suchen“
-- Kartenlayout neu aufgebaut, damit Leaflet-Kacheln sauber laden
-- Cache-Version erhöht, damit alte Dateien eher ersetzt werden
+## Dateien
 
-## Wichtig
+```
+index.html
+css/style.css
+js/app.js
+assets/icon.svg
+manifest.webmanifest
+service-worker.js
+```
 
-Wenn die alte Version am Handy noch erscheint:
+## GitHub Pages Deployment
 
-1. Homescreen-App löschen.
-2. Safari öffnen.
-3. Seite neu laden.
-4. Bei Bedarf Website-Daten für die Seite löschen.
-5. App erneut zum Home-Bildschirm hinzufügen.
+1. Repo anlegen (z. B. `schweden-camper-finder`)
+2. Alle Dateien hochladen — Ordnerstruktur beibehalten (`css/`, `js/`, `assets/`)
+3. Settings → Pages → Branch `main`, Ordner `/root`
+4. App läuft dann unter `https://DEINNAME.github.io/schweden-camper-finder/`
 
+## Auf dem iPhone als App installieren
 
-## Änderung v1.3
+1. Safari öffnen → zur GitHub-Pages-URL navigieren
+2. Teilen-Symbol → „Zum Home-Bildschirm"
+3. Fertig
 
-- iPhone-Layout korrigiert
-- horizontales Überlaufen verhindert
-- Radius-Auswahl auf kleinen Bildschirmen sichtbar gemacht
-- Suchbutton gekürzt
-- App auf mobilen Geräten wieder normal scrollbar gemacht
+## Alte Version entfernen (falls App am Handy noch cacht)
 
+1. Homescreen-App löschen
+2. Safari → Einstellungen → Website-Daten → Seite löschen
+3. App erneut hinzufügen
 
-## Änderung v1.4
+## Änderungen v2.0
 
-- Kategorie `🛒 ICA Maxi` ergänzt
-- ICA Maxi wird über OSM-Supermärkte mit Name/Brand/Operator `ICA Maxi` gesucht
-- Spezialmodi `Versorgung`, `Baden & Pause` und `Abendplatz prüfen` können ICA Maxi mit anzeigen
-
-
-## Änderung v1.5
-
-- Kategorie `🏛 Museen` ergänzt (`tourism=museum`)
-- Kategorie `🥾 Wanderwege` ergänzt (`route=hiking`, `route=foot`, Wandernetzwerk-Tags)
-- Museen und Wanderwege sind eigene Buttons
+- Komplett neues Design: dunkles Waldgrün, leuchtender Akzent
+- Kategorie-Chips mit Farb-Dots
+- Ergebniskarten mit Icon-Badge und kontextbezogenen Badges (24/7, kostenlos, …)
+- Animierter Ladebalken
+- Elegantes Fadenkreuz auf der Karte
+- Alle Funktionen erhalten: Favoriten, Notizen, Schnellmodi, alle 10 Kategorien

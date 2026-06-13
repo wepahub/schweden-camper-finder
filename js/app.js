@@ -1,3 +1,5 @@
+"use strict";
+
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
@@ -5,122 +7,58 @@ const OVERPASS_ENDPOINTS = [
 ];
 
 const CATEGORIES = {
-  toilets: {
-    label: "WC",
-    icon: "🚻",
-    color: "#3b82f6",
-    queries: [["amenity", "toilets"], ["toilets", "yes"]],
-    scoreBase: 60
-  },
-  water: {
-    label: "Wasser",
-    icon: "💧",
-    color: "#06b6d4",
-    queries: [["amenity", "drinking_water"], ["drinking_water", "yes"]],
-    scoreBase: 45
-  },
-  camping: {
-    label: "Stellplatz/Camping",
-    icon: "🏕",
-    color: "#22c55e",
-    queries: [["tourism", "caravan_site"], ["tourism", "camp_site"]],
-    scoreBase: 55
-  },
-  bathing: {
-    label: "Baden",
-    icon: "🏖",
-    color: "#facc15",
-    queries: [["leisure", "swimming_area"], ["natural", "beach"], ["leisure", "beach_resort"]],
-    scoreBase: 45
-  },
-  church: {
-    label: "Kirche",
-    icon: "⛪",
-    color: "#a78bfa",
-    queries: [["amenity", "place_of_worship"]],
-    extraFilter: tags => !tags.religion || tags.religion === "christian",
-    scoreBase: 25
-  },
-  parking: {
-    label: "Parkplatz",
-    icon: "🅿",
-    color: "#94a3b8",
-    queries: [["amenity", "parking"]],
-    scoreBase: 30
-  },
+  toilets: { label:"WC", icon:"🚻", color:"#3b82f6", bg:"rgba(59,130,246,.18)", queries:[["amenity","toilets"],["toilets","yes"]], scoreBase:60 },
+  water:   { label:"Wasser", icon:"💧", color:"#06b6d4", bg:"rgba(6,182,212,.18)", queries:[["amenity","drinking_water"],["drinking_water","yes"]], scoreBase:45 },
+  camping: { label:"Stellplatz", icon:"🏕", color:"#22c55e", bg:"rgba(34,197,94,.18)", queries:[["tourism","caravan_site"],["tourism","camp_site"]], scoreBase:55 },
+  bathing: { label:"Baden", icon:"🏖", color:"#facc15", bg:"rgba(250,204,21,.18)", queries:[["leisure","swimming_area"],["natural","beach"],["leisure","beach_resort"]], scoreBase:45 },
+  church:  { label:"Kirche", icon:"⛪", color:"#a78bfa", bg:"rgba(167,139,250,.18)", queries:[["amenity","place_of_worship"]], extraFilter: t => !t.religion || t.religion === "christian", scoreBase:25 },
+  parking: { label:"Parkplatz", icon:"🅿", color:"#94a3b8", bg:"rgba(148,163,184,.18)", queries:[["amenity","parking"]], scoreBase:30 },
+  picnic:  { label:"Pause", icon:"🧺", color:"#fb923c", bg:"rgba(251,146,60,.18)", queries:[["tourism","picnic_site"],["highway","rest_area"]], scoreBase:35 },
   ica: {
-    label: "ICA Maxi",
-    icon: "🛒",
-    color: "#ef4444",
-    queries: [["shop", "supermarket"]],
-    extraFilter: tags => {
-      const values = [
-        tags.name,
-        tags.brand,
-        tags.operator,
-        tags["name:sv"],
-        tags["official_name"]
-      ].filter(Boolean).join(" ").toLowerCase();
-      return values.includes("ica maxi") || (values.includes("ica") && values.includes("maxi"));
+    label:"ICA Maxi", icon:"🛒", color:"#ef4444", bg:"rgba(239,68,68,.18)", queries:[["shop","supermarket"]],
+    extraFilter: t => {
+      const v = [t.name,t.brand,t.operator,t["name:sv"],t["official_name"]].filter(Boolean).join(" ").toLowerCase();
+      return v.includes("ica maxi") || (v.includes("ica") && v.includes("maxi"));
     },
-    scoreBase: 50
+    scoreBase:50
   },
-  museum: {
-    label: "Museum",
-    icon: "🏛",
-    color: "#c084fc",
-    queries: [["tourism", "museum"]],
-    scoreBase: 45
-  },
+  museum:  { label:"Museum", icon:"🏛", color:"#c084fc", bg:"rgba(192,132,252,.18)", queries:[["tourism","museum"]], scoreBase:45 },
   hiking: {
-    label: "Wanderweg",
-    icon: "🥾",
-    color: "#84cc16",
-    queries: [["route", "hiking"], ["route", "foot"], ["network", "lwn"], ["network", "rwn"], ["network", "nwn"]],
-    extraFilter: tags => {
-      if (tags.route === "hiking" || tags.route === "foot") return true;
-      if (["lwn", "rwn", "nwn", "iwn"].includes(tags.network)) return true;
-      return false;
-    },
-    scoreBase: 35
-  },
-  picnic: {
-    label: "Pause",
-    icon: "🧺",
-    color: "#fb923c",
-    queries: [["tourism", "picnic_site"], ["highway", "rest_area"]],
-    scoreBase: 35
+    label:"Wanderweg", icon:"🥾", color:"#84cc16", bg:"rgba(132,204,22,.18)",
+    queries:[["route","hiking"],["route","foot"],["network","lwn"],["network","rwn"],["network","nwn"]],
+    extraFilter: t => t.route === "hiking" || t.route === "foot" || ["lwn","rwn","nwn","iwn"].includes(t.network),
+    scoreBase:35
   }
 };
 
 const MODES = {
-  toilet: ["toilets"],
-  pause: ["bathing", "picnic", "parking", "toilets", "water", "ica", "museum", "hiking"],
-  evening: ["camping", "parking", "church", "picnic", "bathing", "toilets", "water", "ica"],
-  supply: ["toilets", "water", "ica"]
+  toilet:  ["toilets"],
+  pause:   ["bathing","picnic","parking","toilets","water","ica","museum","hiking"],
+  evening: ["camping","parking","church","picnic","bathing","toilets","water","ica"],
+  supply:  ["toilets","water","ica"]
 };
 
-let map;
-let markerLayer;
+let map, markerLayer;
 let currentResults = [];
 let currentPlaceLabel = "Kartenmitte";
 let showFavoritesOnly = false;
 
 const els = {
-  status: document.getElementById("statusText"),
-  centerText: document.getElementById("centerText"),
-  locateBtn: document.getElementById("locateBtn"),
-  placeForm: document.getElementById("placeForm"),
-  placeInput: document.getElementById("placeInput"),
+  status:       document.getElementById("statusText"),
+  centerText:   document.getElementById("centerText"),
+  locateBtn:    document.getElementById("locateBtn"),
+  placeForm:    document.getElementById("placeForm"),
+  placeInput:   document.getElementById("placeInput"),
   placeResults: document.getElementById("placeResults"),
-  searchBtn: document.getElementById("searchBtn"),
-  radius: document.getElementById("radiusSelect"),
-  chips: [...document.querySelectorAll(".chip")],
-  modeBtns: [...document.querySelectorAll(".mode-btn")],
-  results: document.getElementById("resultsList"),
-  warning: document.getElementById("warningBox"),
-  showFavoritesBtn: document.getElementById("showFavoritesBtn"),
-  template: document.getElementById("resultItemTemplate")
+  searchBtn:    document.getElementById("searchBtn"),
+  radius:       document.getElementById("radiusSelect"),
+  chips:        [...document.querySelectorAll(".chip")],
+  modeBtns:     [...document.querySelectorAll(".mode-btn")],
+  results:      document.getElementById("resultsList"),
+  warning:      document.getElementById("warningBox"),
+  favBtn:       document.getElementById("showFavoritesBtn"),
+  loadingBar:   document.getElementById("loadingBar"),
+  template:     document.getElementById("resultItemTemplate")
 };
 
 init();
@@ -129,59 +67,54 @@ function init() {
   initMap();
   bindUI();
   loadLastResults();
-  scheduleMapResize();
-
+  scheduleResize();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js?v=1.5").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
   }
 }
 
 function initMap() {
-  map = L.map("map", {
-    zoomControl: true,
-    preferCanvas: true
-  }).setView([59.8586, 17.6389], 11); // Uppsala als neutraler Startpunkt
+  map = L.map("map", { zoomControl: true, preferCanvas: true })
+    .setView([59.8586, 17.6389], 11);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   markerLayer = L.layerGroup().addTo(map);
 
   map.whenReady(() => {
-    scheduleMapResize();
+    scheduleResize();
     updateCenterText();
   });
 
   map.on("moveend zoomend", () => {
     currentPlaceLabel = "Kartenmitte";
     updateCenterText();
-    scheduleMapResize();
   });
 }
 
 function bindUI() {
-  window.addEventListener("resize", scheduleMapResize);
-  window.addEventListener("orientationchange", scheduleMapResize);
-  document.addEventListener("visibilitychange", scheduleMapResize);
+  window.addEventListener("resize", scheduleResize);
+  window.addEventListener("orientationchange", scheduleResize);
+  document.addEventListener("visibilitychange", scheduleResize);
 
   els.locateBtn.addEventListener("click", locateUser);
   els.placeForm.addEventListener("submit", searchPlace);
   els.searchBtn.addEventListener("click", runSearch);
 
-  els.showFavoritesBtn.addEventListener("click", () => {
+  els.favBtn.addEventListener("click", () => {
     showFavoritesOnly = !showFavoritesOnly;
-    els.showFavoritesBtn.classList.toggle("active", showFavoritesOnly);
+    els.favBtn.classList.toggle("active", showFavoritesOnly);
     renderResults();
     renderMap();
   });
 
   els.chips.forEach(chip => {
     chip.addEventListener("click", () => {
-      els.modeBtns.forEach(btn => btn.classList.remove("active"));
+      els.modeBtns.forEach(b => b.classList.remove("active"));
       chip.classList.toggle("active");
-      scheduleMapResize();
     });
   });
 
@@ -189,14 +122,13 @@ function bindUI() {
     btn.addEventListener("click", () => {
       els.modeBtns.forEach(b => b.classList.toggle("active", b === btn));
       const cats = MODES[btn.dataset.mode];
-      els.chips.forEach(chip => chip.classList.toggle("active", cats.includes(chip.dataset.category)));
-      scheduleMapResize();
+      els.chips.forEach(c => c.classList.toggle("active", cats.includes(c.dataset.category)));
     });
   });
 }
 
 let _resizeTimer;
-function scheduleMapResize() {
+function scheduleResize() {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
     if (map) map.invalidateSize({ pan: false });
@@ -208,39 +140,46 @@ function updateCenterText() {
   els.centerText.textContent = `Suchzentrum: ${currentPlaceLabel} (${c.lat.toFixed(4)}, ${c.lng.toFixed(4)})`;
 }
 
+function setLoading(on) {
+  els.loadingBar.classList.toggle("on", on);
+}
+
+// ── GEOLOCATION ──
 function locateUser() {
   if (!navigator.geolocation) {
-    els.status.textContent = "Standort wird von diesem Browser nicht unterstützt.";
+    els.status.textContent = "GPS nicht unterstützt.";
     return;
   }
-
   els.status.textContent = "Standort wird gesucht …";
+  els.locateBtn.classList.add("pulse");
 
   navigator.geolocation.getCurrentPosition(
     pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
       currentPlaceLabel = "Mein Standort";
-      map.setView([lat, lon], 14);
+      map.setView([pos.coords.latitude, pos.coords.longitude], 14);
       updateCenterText();
-      scheduleMapResize();
-      els.status.textContent = "Standort gefunden. Suche nutzt jetzt die Kartenmitte.";
+      scheduleResize();
+      els.status.textContent = "Standort gefunden.";
+      els.locateBtn.classList.remove("pulse");
     },
     () => {
-      els.status.textContent = "Kein GPS-Zugriff. Du kannst einen Ort suchen oder die Karte verschieben.";
+      els.status.textContent = "Kein GPS-Zugriff. Ort suchen oder Karte verschieben.";
+      els.locateBtn.classList.remove("pulse");
     },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 }
   );
 }
 
+// ── PLACE SEARCH ──
 async function searchPlace(event) {
   event.preventDefault();
   const query = els.placeInput.value.trim();
   if (!query) return;
 
-  els.status.textContent = `Suche Ort „${query}“ …`;
+  els.status.textContent = `Suche „${query}" …`;
   els.placeResults.classList.add("hidden");
   els.placeResults.innerHTML = "";
+  setLoading(true);
 
   try {
     const url = new URL("https://nominatim.openstreetmap.org/search");
@@ -249,7 +188,7 @@ async function searchPlace(event) {
     url.searchParams.set("limit", "6");
     url.searchParams.set("addressdetails", "1");
 
-    const res = await fetch(url.toString(), { headers: { "Accept": "application/json" }});
+    const res = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
     if (!res.ok) throw new Error("Ortssuche fehlgeschlagen");
     const data = await res.json();
 
@@ -263,7 +202,6 @@ async function searchPlace(event) {
       return;
     }
 
-    els.placeResults.innerHTML = "";
     data.forEach(place => {
       const btn = document.createElement("button");
       btn.className = "place-result";
@@ -277,27 +215,26 @@ async function searchPlace(event) {
   } catch (err) {
     console.error(err);
     els.status.textContent = "Ortssuche fehlgeschlagen. Bitte erneut versuchen.";
+  } finally {
+    setLoading(false);
   }
 }
 
 function choosePlace(place) {
   const lat = Number(place.lat);
   const lon = Number(place.lon);
-  currentPlaceLabel = shortenPlaceName(place.display_name);
+  currentPlaceLabel = place.display_name.split(",").slice(0, 3).join(",").trim();
   els.placeInput.value = currentPlaceLabel;
   els.placeResults.classList.add("hidden");
   map.setView([lat, lon], 13);
   updateCenterText();
-  scheduleMapResize();
-  els.status.textContent = `Suchzentrum auf ${currentPlaceLabel} gesetzt.`;
+  scheduleResize();
+  els.status.textContent = `Suchzentrum: ${currentPlaceLabel}.`;
 }
 
-function shortenPlaceName(name) {
-  return name.split(",").slice(0, 3).join(",").trim();
-}
-
+// ── MAIN SEARCH ──
 async function runSearch() {
-  const center = map.getCenter(); // WICHTIG: immer Kartenmitte, nicht alter GPS-Standort
+  const center = map.getCenter();
   const origin = { lat: center.lat, lon: center.lng };
   const radius = Number(els.radius.value);
   const categories = getActiveCategories();
@@ -308,11 +245,12 @@ async function runSearch() {
   }
 
   updateCenterText();
-  els.status.textContent = `Suche ${formatDistance(radius)} um ${currentPlaceLabel} …`;
-  els.results.innerHTML = '<p class="empty">Daten werden geladen …</p>';
+  els.status.textContent = `Suche ${formatDist(radius)} um ${currentPlaceLabel} …`;
+  els.results.innerHTML = `<p class="empty">Daten werden geladen …</p>`;
+  setLoading(true);
 
-  const showWarning = categories.some(c => ["parking", "church", "picnic"].includes(c));
-  els.warning.classList.toggle("hidden", !showWarning);
+  const showWarn = categories.some(c => ["parking", "church", "picnic"].includes(c));
+  els.warning.classList.toggle("hidden", !showWarn);
 
   try {
     const query = buildOverpassQuery(origin.lat, origin.lon, radius, categories);
@@ -321,108 +259,88 @@ async function runSearch() {
     currentResults = normalizeOverpass(data.elements || [], categories, origin)
       .filter(applySafetyFilters);
 
-    enrichNearbyFeatures(currentResults);
-
+    enrichNearby(currentResults);
     currentResults.sort((a, b) => a.distance - b.distance || b.score - a.score);
 
     saveLastResults();
     renderMap();
     renderResults();
-    scheduleMapResize();
-
-    els.status.textContent = `${currentResults.length} Treffer um ${currentPlaceLabel} gefunden.`;
-  } catch (error) {
-    console.error(error);
-    els.status.textContent = "Suche fehlgeschlagen. Bitte Radius verkleinern oder erneut versuchen.";
-    els.results.innerHTML = '<p class="empty">Keine Daten geladen. Overpass ist manchmal langsam – erneut versuchen oder Radius verkleinern.</p>';
+    scheduleResize();
+    els.status.textContent = `${currentResults.length} Treffer gefunden.`;
+  } catch (err) {
+    console.error(err);
+    els.status.textContent = "Suche fehlgeschlagen. Bitte erneut versuchen.";
+    els.results.innerHTML = `<p class="empty">Keine Daten geladen. Overpass kann langsam sein – Radius verkleinern oder erneut versuchen.</p>`;
+  } finally {
+    setLoading(false);
   }
 }
 
 function getActiveCategories() {
   return els.chips
-    .filter(chip => chip.classList.contains("active"))
-    .map(chip => chip.dataset.category);
+    .filter(c => c.classList.contains("active"))
+    .map(c => c.dataset.category);
 }
 
+// ── OVERPASS ──
 function buildOverpassQuery(lat, lon, radius, categories) {
   const parts = [];
-  categories.forEach(catKey => {
-    const cat = CATEGORIES[catKey];
-    cat.queries.forEach(([key, value]) => {
-      parts.push(`node["${key}"="${value}"](around:${radius},${lat},${lon});`);
-      parts.push(`way["${key}"="${value}"](around:${radius},${lat},${lon});`);
-      parts.push(`relation["${key}"="${value}"](around:${radius},${lat},${lon});`);
+  categories.forEach(k => {
+    CATEGORIES[k].queries.forEach(([key, val]) => {
+      parts.push(`node["${key}"="${val}"](around:${radius},${lat},${lon});`);
+      parts.push(`way["${key}"="${val}"](around:${radius},${lat},${lon});`);
+      parts.push(`relation["${key}"="${val}"](around:${radius},${lat},${lon});`);
     });
   });
-
-  return `[out:json][timeout:30];
-(
-${parts.map(p => "  " + p).join("\n")}
-);
-out center tags;`;
+  return `[out:json][timeout:30];\n(\n${parts.map(p => "  " + p).join("\n")}\n);\nout center tags;`;
 }
 
 async function fetchOverpass(query) {
   let lastError;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
+  for (const ep of OVERPASS_ENDPOINTS) {
     try {
-      const response = await fetch(endpoint, {
+      const r = await fetch(ep, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body: new URLSearchParams({ data: query })
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      lastError = err;
-    }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) { lastError = e; }
   }
   throw lastError || new Error("Overpass nicht erreichbar");
 }
 
 function normalizeOverpass(elements, categories, origin) {
   const seen = new Set();
-  const favorites = getFavorites();
-
+  const favs = getFavorites();
   return elements.flatMap(el => {
     const tags = el.tags || {};
     const lat = el.lat ?? el.center?.lat;
     const lon = el.lon ?? el.center?.lon;
     if (!lat || !lon) return [];
 
-    const matchedCategory = categories.find(catKey => {
-      const cat = CATEGORIES[catKey];
-      const tagMatch = cat.queries.some(([key, value]) => tags[key] === value);
-      const extraOk = !cat.extraFilter || cat.extraFilter(tags);
-      return tagMatch && extraOk;
+    const catKey = categories.find(k => {
+      const cat = CATEGORIES[k];
+      return cat.queries.some(([key, val]) => tags[key] === val) &&
+             (!cat.extraFilter || cat.extraFilter(tags));
     });
-
-    if (!matchedCategory) return [];
+    if (!catKey) return [];
 
     const id = `${el.type}/${el.id}`;
     if (seen.has(id)) return [];
     seen.add(id);
 
-    const category = CATEGORIES[matchedCategory];
-    const distance = haversine(origin.lat, origin.lon, lat, lon);
-    const score = scorePlace(matchedCategory, tags, distance);
-
+    const cat = CATEGORIES[catKey];
+    const dist = haversine(origin.lat, origin.lon, lat, lon);
     return [{
-      id,
-      osmType: el.type,
-      osmId: el.id,
-      categoryKey: matchedCategory,
-      categoryLabel: category.label,
-      icon: category.icon,
-      color: category.color,
-      name: tags.name || tags["name:sv"] || tags.operator || category.label,
-      lat,
-      lon,
-      distance,
-      tags,
-      score,
-      favorite: Boolean(favorites[id]?.favorite),
-      note: favorites[id]?.note || "",
+      id, osmType: el.type, osmId: el.id,
+      catKey, catLabel: cat.label, icon: cat.icon, color: cat.color, bg: cat.bg,
+      name: tags.name || tags["name:sv"] || tags.operator || cat.label,
+      lat, lon, distance: dist, tags,
+      score: scorePlace(catKey, tags, dist),
+      favorite: Boolean(favs[id]?.favorite),
+      note: favs[id]?.note || "",
       googleMapsUrl: `https://www.google.com/maps?q=${lat},${lon}`,
       osmUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
       nearby: []
@@ -430,174 +348,154 @@ function normalizeOverpass(elements, categories, origin) {
   });
 }
 
-function applySafetyFilters(place) {
-  const access = place.tags.access;
-  if (access === "private" || access === "no") return false;
-  if (place.categoryKey === "parking" && ["underground", "multi-storey"].includes(place.tags.parking)) {
-    return false;
-  }
+function applySafetyFilters(p) {
+  const a = p.tags.access;
+  if (a === "private" || a === "no") return false;
+  if (p.catKey === "parking" && ["underground", "multi-storey"].includes(p.tags.parking)) return false;
   return true;
 }
 
-function scorePlace(categoryKey, tags, distance) {
-  let score = CATEGORIES[categoryKey].scoreBase;
-
-  if (distance < 1000) score += 20;
-  else if (distance < 3000) score += 10;
-
-  if (tags.access === "yes" || tags.access === "public") score += 12;
-  if (tags.opening_hours === "24/7") score += 12;
-  if (tags.fee === "no") score += 8;
-  if (tags.toilets === "yes") score += 15;
-  if (tags.drinking_water === "yes") score += 12;
-  if (tags.shower === "yes") score += 6;
-  if (tags.website || tags["contact:website"]) score += 3;
-
-  return score;
+function scorePlace(k, t, d) {
+  let s = CATEGORIES[k].scoreBase;
+  if (d < 1000) s += 20; else if (d < 3000) s += 10;
+  if (t.access === "yes" || t.access === "public") s += 12;
+  if (t.opening_hours === "24/7") s += 12;
+  if (t.fee === "no") s += 8;
+  if (t.toilets === "yes") s += 15;
+  if (t.drinking_water === "yes") s += 12;
+  if (t.shower === "yes") s += 6;
+  if (t.website || t["contact:website"]) s += 3;
+  return s;
 }
 
-function enrichNearbyFeatures(results) {
+function enrichNearby(results) {
   const useful = ["toilets", "water", "parking", "picnic"];
-  results.forEach(place => {
-    if (!["bathing", "church", "picnic", "parking", "camping"].includes(place.categoryKey)) return;
-
-    const nearby = results
-      .filter(other => other.id !== place.id && useful.includes(other.categoryKey))
-      .map(other => ({ ...other, d: haversine(place.lat, place.lon, other.lat, other.lon) }))
-      .filter(other => other.d <= 350)
+  results.forEach(p => {
+    if (!["bathing", "church", "picnic", "parking", "camping"].includes(p.catKey)) return;
+    p.nearby = results
+      .filter(o => o.id !== p.id && useful.includes(o.catKey))
+      .map(o => ({ ...o, d: haversine(p.lat, p.lon, o.lat, o.lon) }))
+      .filter(o => o.d <= 350)
       .sort((a, b) => a.d - b.d)
-      .slice(0, 4);
-
-    place.nearby = nearby.map(n => `${n.icon} ${n.categoryLabel} ${Math.round(n.d)} m`);
-    place.score += nearby.length * 8;
+      .slice(0, 4)
+      .map(n => `${n.icon} ${n.catLabel} ${Math.round(n.d)} m`);
+    p.score += p.nearby.length * 8;
   });
 }
 
+// ── RENDER MAP ──
 function renderMap() {
   markerLayer.clearLayers();
-
-  getVisibleResults().forEach(place => {
+  getVisible().forEach(p => {
     const icon = L.divIcon({
-      html: `<div class="marker-dot" style="background:${place.color}">${place.icon}</div>`,
-      className: "",
-      iconSize: [32, 32],
-      iconAnchor: [16, 16]
+      html: `<div class="marker-dot" style="background:${p.color}">${p.icon}</div>`,
+      className: "", iconSize: [34, 34], iconAnchor: [17, 17]
     });
-
     const popup = `
-      <div class="popup-title">${escapeHtml(place.icon + " " + place.name)}</div>
-      <div>${escapeHtml(place.categoryLabel)} · ${formatDistance(place.distance)}</div>
-      ${place.nearby?.length ? `<div>${escapeHtml(place.nearby.join(" · "))}</div>` : ""}
+      <p class="popup-title">${esc(p.icon + " " + p.name)}</p>
+      <p class="popup-meta">${esc(p.catLabel)} · ${formatDist(p.distance)}${p.nearby?.length ? " · " + esc(p.nearby.join(" · ")) : ""}</p>
       <div class="popup-actions">
-        <a href="${place.googleMapsUrl}" target="_blank" rel="noopener">In Google Maps öffnen</a>
-        <a href="${place.osmUrl}" target="_blank" rel="noopener">In OSM öffnen</a>
-      </div>
-    `;
-
-    L.marker([place.lat, place.lon], { icon })
-      .addTo(markerLayer)
-      .bindPopup(popup);
+        <a href="${p.googleMapsUrl}" target="_blank" rel="noopener">In Google Maps öffnen</a>
+        <a href="${p.osmUrl}" target="_blank" rel="noopener">OpenStreetMap</a>
+      </div>`;
+    L.marker([p.lat, p.lon], { icon }).addTo(markerLayer).bindPopup(popup);
   });
 }
 
+// ── RENDER RESULTS ──
 function renderResults() {
-  const visible = getVisibleResults();
-
+  const visible = getVisible();
   if (!visible.length) {
     els.results.innerHTML = `<p class="empty">${showFavoritesOnly ? "Noch keine Favoriten gespeichert." : "Keine Treffer für diese Auswahl."}</p>`;
     return;
   }
 
   els.results.innerHTML = "";
+  visible.forEach(p => {
+    const node = els.template.content.cloneNode(true);
 
-  visible.forEach(place => {
-      const node = els.template.content.cloneNode(true);
-      node.querySelector(".result-title").textContent = `${place.icon} ${place.name}`;
-      node.querySelector(".result-meta").textContent = `${place.categoryLabel} · ${formatDistance(place.distance)} von der Kartenmitte`;
-      node.querySelector(".result-extra").textContent = buildExtraLine(place);
+    node.querySelector(".card-icon").textContent = p.icon;
+    node.querySelector(".card-icon").style.background = p.bg;
+    node.querySelector(".result-title").textContent = p.name;
+    node.querySelector(".result-meta").textContent = `${p.catLabel} · ${formatDist(p.distance)} von der Kartenmitte`;
 
-      const link = node.querySelector(".maps-link");
-      link.href = place.googleMapsUrl;
+    // Badges
+    const badges = [];
+    if (p.tags.opening_hours === "24/7") badges.push(`<span class="badge green">24/7</span>`);
+    if (p.tags.fee === "no") badges.push(`<span class="badge green">kostenlos</span>`);
+    if (p.tags.drinking_water === "yes") badges.push(`<span class="badge">💧 Wasser</span>`);
+    if (p.tags.toilets === "yes") badges.push(`<span class="badge">🚻 WC</span>`);
+    if (p.favorite) badges.push(`<span class="badge yellow">★ Favorit</span>`);
+    node.querySelector(".result-badges").innerHTML = badges.join("");
 
-      const osmLink = node.querySelector(".osm-link");
-      osmLink.href = place.osmUrl;
+    // Extra info
+    const extras = [];
+    if (p.tags.opening_hours) extras.push(`Öffnung: ${p.tags.opening_hours}`);
+    if (p.tags.fee) extras.push(`Gebühr: ${p.tags.fee}`);
+    if (p.tags.access) extras.push(`Zugang: ${p.tags.access}`);
+    if (p.nearby?.length) extras.push(p.nearby.join(" · "));
+    if (p.note) extras.push(`📝 ${p.note}`);
+    if (["parking", "church", "picnic"].includes(p.catKey)) extras.push("Beschilderung prüfen.");
+    node.querySelector(".result-extra").textContent = extras.join(" · ") || "";
 
-      const favBtn = node.querySelector(".fav-btn");
-      favBtn.textContent = place.favorite ? "★ Favorit" : "☆ Favorit";
-      favBtn.addEventListener("click", () => toggleFavorite(place.id));
+    // Links
+    node.querySelector(".maps-link").href = p.googleMapsUrl;
+    node.querySelector(".osm-link").href = p.osmUrl;
 
-      const noteBtn = node.querySelector(".note-btn");
-      noteBtn.addEventListener("click", () => editNote(place.id));
+    // Favorite button
+    const favBtn = node.querySelector(".fav-btn");
+    favBtn.textContent = p.favorite ? "★ Favorit" : "☆ Favorit";
+    if (p.favorite) favBtn.classList.add("active");
+    favBtn.addEventListener("click", () => toggleFav(p.id));
 
-      els.results.appendChild(node);
-    });
+    // Note button
+    const noteBtn = node.querySelector(".note-btn");
+    if (p.note) noteBtn.textContent = "✏️ Notiz ✓";
+    noteBtn.addEventListener("click", () => editNote(p.id));
+
+    els.results.appendChild(node);
+  });
 }
 
-function getVisibleResults() {
+function getVisible() {
   if (!showFavoritesOnly) return currentResults;
   return currentResults.filter(r => r.favorite);
 }
 
-function buildExtraLine(place) {
-  const extras = [];
-
-  if (place.tags.opening_hours) extras.push(`Öffnung: ${place.tags.opening_hours}`);
-  if (place.tags.fee) extras.push(`Gebühr: ${place.tags.fee}`);
-  if (place.tags.access) extras.push(`Zugang: ${place.tags.access}`);
-  if (place.nearby?.length) extras.push(place.nearby.join(" · "));
-  if (place.note) extras.push(`Notiz: ${place.note}`);
-
-  if (["parking", "church", "picnic"].includes(place.categoryKey)) {
-    extras.push("Beschilderung prüfen.");
-  }
-
-  return extras.join(" · ") || "Keine Zusatzinfos in OSM.";
-}
-
-function toggleFavorite(id) {
-  const place = currentResults.find(r => r.id === id);
-  if (!place) return;
-  place.favorite = !place.favorite;
-
-  const favorites = getFavorites();
-  favorites[id] = { favorite: place.favorite, note: place.note };
-  if (!place.favorite && !place.note) delete favorites[id];
-  localStorage.setItem("scf:favorites", JSON.stringify(favorites));
-
+// ── FAVORITES & NOTES ──
+function toggleFav(id) {
+  const p = currentResults.find(r => r.id === id);
+  if (!p) return;
+  p.favorite = !p.favorite;
+  const favs = getFavorites();
+  favs[id] = { favorite: p.favorite, note: p.note };
+  if (!p.favorite && !p.note) delete favs[id];
+  localStorage.setItem("scf:favorites", JSON.stringify(favs));
   renderMap();
   renderResults();
 }
 
 function editNote(id) {
-  const place = currentResults.find(r => r.id === id);
-  if (!place) return;
-
+  const p = currentResults.find(r => r.id === id);
+  if (!p) return;
   const dialog = document.getElementById("noteDialog");
-  document.getElementById("noteDialogLabel").textContent = `Notiz zu: ${place.name}`;
-  const textarea = document.getElementById("noteDialogText");
-  textarea.value = place.note || "";
-
+  document.getElementById("noteDialogLabel").textContent = `Notiz: ${p.name}`;
+  document.getElementById("noteDialogText").value = p.note || "";
   dialog.showModal();
-
   dialog.onclose = () => {
     if (dialog.returnValue !== "save") return;
-    place.note = textarea.value.trim();
-
-    const favorites = getFavorites();
-    favorites[id] = { favorite: place.favorite, note: place.note };
-    if (!place.favorite && !place.note) delete favorites[id];
-    localStorage.setItem("scf:favorites", JSON.stringify(favorites));
-
+    p.note = document.getElementById("noteDialogText").value.trim();
+    const favs = getFavorites();
+    favs[id] = { favorite: p.favorite, note: p.note };
+    if (!p.favorite && !p.note) delete favs[id];
+    localStorage.setItem("scf:favorites", JSON.stringify(favs));
     renderResults();
   };
 }
 
 function getFavorites() {
-  try {
-    return JSON.parse(localStorage.getItem("scf:favorites") || "{}");
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem("scf:favorites") || "{}"); }
+  catch { return {}; }
 }
 
 function saveLastResults() {
@@ -614,48 +512,35 @@ function loadLastResults() {
   try {
     const saved = JSON.parse(localStorage.getItem("scf:lastResults:v12") || "null");
     if (!saved?.results?.length) return;
-
-    const favorites = getFavorites();
+    const favs = getFavorites();
     currentPlaceLabel = saved.label || "Kartenmitte";
     currentResults = saved.results.map(r => ({
       ...r,
-      favorite: Boolean(favorites[r.id]?.favorite),
-      note: favorites[r.id]?.note || r.note || ""
+      favorite: Boolean(favs[r.id]?.favorite),
+      note: favs[r.id]?.note || r.note || ""
     }));
-
     if (saved.center?.lat && saved.center?.lng) {
       map.setView([saved.center.lat, saved.center.lng], 13);
     }
-
     renderMap();
     renderResults();
     updateCenterText();
-    els.status.textContent = "Letzte Treffer geladen.";
+    els.status.textContent = "Letzte Ergebnisse geladen.";
   } catch {}
 }
 
-function formatDistance(meters) {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
+// ── UTILS ──
+function formatDist(m) {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const toRad = deg => deg * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat/2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon/2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const R = 6371000, r = d => d * Math.PI / 180;
+  const dLat = r(lat2 - lat1), dLon = r(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function esc(v) {
+  return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 }
