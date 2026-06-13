@@ -42,6 +42,7 @@ let map, markerLayer;
 let currentResults = [];
 let currentPlaceLabel = "Kartenmitte";
 let showFavoritesOnly = false;
+let _resizeTimer;
 
 const els = {
   status:       document.getElementById("statusText"),
@@ -127,7 +128,6 @@ function bindUI() {
   });
 }
 
-let _resizeTimer;
 function scheduleResize() {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
