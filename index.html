@@ -4,147 +4,216 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1a14">
+  <meta name="description" content="Camper-Helfer für Schweden und Skandinavien: WC, Wasser, Entsorgung, Stellplätze, Tankstellen und mehr – auch entlang der Route und offline.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Camper Finder">
   <title>Schweden Camper Finder</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
-  <link rel="stylesheet" href="css/style.css?v=3.1">
+  <link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="vendor/markercluster/MarkerCluster.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="app">
 
   <header class="topbar">
-    <div class="topbar-inner">
-      <div class="logo-mark">🌲</div>
-      <div class="topbar-text">
-        <h1>Schweden Camper Finder</h1>
-        <p id="statusText">Ort suchen, GPS laden oder Karte verschieben.</p>
-      </div>
+    <img class="logo-mark" src="assets/icon.svg" alt="" width="34" height="34">
+    <div class="topbar-text">
+      <h1 data-i18n="app.title">Schweden Camper Finder</h1>
+      <p id="statusText" role="status" aria-live="polite" data-i18n="status.initial">Ort suchen, GPS laden oder Karte verschieben.</p>
     </div>
-    <button id="locateBtn" class="icon-btn" title="Mein Standort" aria-label="Mein Standort">📍</button>
+    <button id="infoBtn" class="icon-btn" type="button" data-i18n-aria="more.allemans" data-i18n-title="more.allemans">⚖️</button>
   </header>
 
-  <div class="loading-bar" id="loadingBar"><div></div></div>
-
-  <section class="searchbar">
-    <form id="placeForm" autocomplete="off">
-      <span class="search-icon">🔎</span>
-      <input id="placeInput" type="search"
-        placeholder="z. B. Uppsala, Karlskrona, Göteborg …"
-        autocomplete="off" autocorrect="off" spellcheck="false">
-      <button type="submit">Suchen</button>
-    </form>
-    <div id="placeResults" class="place-results hidden"></div>
-  </section>
-
-  <section class="controls">
-    <div class="mode-row">
-      <button class="mode-btn" data-mode="toilet">🚻 WC jetzt</button>
-      <button class="mode-btn" data-mode="pause">🏖 Baden &amp; Pause</button>
-      <button class="mode-btn" data-mode="evening">🌙 Abendplatz</button>
-      <button class="mode-btn" data-mode="supply">💧 Versorgung</button>
-    </div>
-    <div class="chip-row">
-      <button class="chip active" data-category="toilets"><span class="dot" style="background:#3b82f6"></span>🚻 WC</button>
-      <button class="chip" data-category="water"><span class="dot" style="background:#06b6d4"></span>💧 Wasser</button>
-      <button class="chip" data-category="camping"><span class="dot" style="background:#22c55e"></span>🏕 Stellplatz</button>
-      <button class="chip" data-category="bathing"><span class="dot" style="background:#facc15"></span>🏖 Baden</button>
-      <button class="chip" data-category="church"><span class="dot" style="background:#a78bfa"></span>⛪ Kirche</button>
-      <button class="chip" data-category="parking"><span class="dot" style="background:#94a3b8"></span>🅿 Parkplatz</button>
-      <button class="chip" data-category="picnic"><span class="dot" style="background:#fb923c"></span>🧺 Pause</button>
-      <button class="chip" data-category="food"><span class="dot" style="background:#22c55e"></span>🛒 Lebensmittel</button>
-      <button class="chip" data-category="museum"><span class="dot" style="background:#c084fc"></span>🏛 Museen</button>
-      <button class="chip" data-category="hiking"><span class="dot" style="background:#84cc16"></span>🥾 Wanderwege</button>
-    </div>
-    <div class="action-row">
-      <label for="radiusSelect">Radius</label>
-      <select id="radiusSelect">
-        <option value="1000">1 km</option>
-        <option value="3000">3 km</option>
-        <option value="5000" selected>5 km</option>
-        <option value="10000">10 km</option>
-        <option value="25000">25 km</option>
-      </select>
-      <button id="searchBtn" class="run-btn">🔍 Suchen</button>
-    </div>
-  </section>
+  <div class="loading-bar" id="loadingBar" aria-hidden="true"><div></div></div>
 
   <main class="content">
     <section class="map-wrap">
-      <div id="map"></div>
-      <div class="crosshair" aria-hidden="true">
+      <div id="map" role="application" data-i18n-aria="map.aria"></div>
+      <div id="crosshair" class="crosshair" aria-hidden="true">
         <div class="crosshair-ring"><div class="crosshair-dot"></div></div>
+      </div>
+
+      <form id="placeForm" class="map-search" role="search" autocomplete="off">
+        <input id="placeInput" type="search" enterkeyhint="search"
+          data-i18n-placeholder="search.placeholder" data-i18n-aria="search.placeholder"
+          autocomplete="off" autocorrect="off" spellcheck="false">
+        <button type="submit" data-i18n-aria="search.submit"><span aria-hidden="true">🔎</span><span class="btn-text" data-i18n="search.submit">Ort suchen</span></button>
+        <div id="placeResults" class="place-results hidden" role="listbox"></div>
+      </form>
+
+      <div class="map-overlay-top">
+        <button id="weatherPill" class="weather-pill hidden" type="button"></button>
+      </div>
+      <button id="searchHereBtn" class="search-here hidden" type="button">🔄 <span data-i18n="search.here">In diesem Gebiet suchen</span></button>
+
+      <div class="map-fabs">
+        <button id="nearestWcBtn" class="fab" type="button" data-i18n-aria="nearestWc.aria" data-i18n-title="nearestWc.aria">🚻</button>
+        <button id="locateBtn" class="fab" type="button" aria-pressed="false" data-i18n-aria="locate.aria" data-i18n-title="locate.aria">
+          <span class="locate-icon" aria-hidden="true"></span>
+        </button>
       </div>
     </section>
 
-    <aside class="results-panel">
-      <div class="results-header">
-        <div class="results-title">
-          <h2>Ergebnisse <span id="resultCount" class="result-count"></span></h2>
-          <p id="centerText">Suchzentrum: Kartenmitte</p>
-        </div>
-        <div class="results-tools">
-          <button id="sortBtn" class="small-btn">↕ Nähe</button>
-          <button id="showFavoritesBtn" class="small-btn fav-toggle">⭐ Favoriten</button>
-        </div>
+    <aside id="sheet" class="sheet">
+      <div id="sheetGrip" class="sheet-grip">
+        <button class="sheet-handle" type="button" aria-label="Panel"><span></span></button>
+        <nav class="tabs" role="tablist">
+          <button class="tab active" role="tab" data-tab="nearby" aria-selected="true" aria-controls="tab-nearby">📍 <span data-i18n="tabs.nearby">Umgebung</span></button>
+          <button class="tab" role="tab" data-tab="route" aria-selected="false" aria-controls="tab-route">🛣 <span data-i18n="tabs.route">Route</span></button>
+          <button class="tab" role="tab" data-tab="favorites" aria-selected="false" aria-controls="tab-favorites">⭐ <span data-i18n="tabs.favorites">Favoriten</span></button>
+          <button class="tab" role="tab" data-tab="more" aria-selected="false" aria-controls="tab-more">☰ <span data-i18n="tabs.more">Mehr</span></button>
+        </nav>
       </div>
 
-      <div id="warningBox" class="warning hidden">
-        ⚠️ Bei Kirchen, Parkplätzen und Rastplätzen immer lokale Beschilderung prüfen.
-      </div>
+      <div class="sheet-body">
+        <section id="tab-nearby" class="tab-panel" role="tabpanel">
+          <div id="modeRow" class="mode-row"></div>
+          <div id="chipGroups" class="chip-groups"></div>
+          <div class="action-row">
+            <label for="radiusSelect" data-i18n="search.radius">Radius</label>
+            <select id="radiusSelect"></select>
+            <button id="searchBtn" class="run-btn" type="button">🔍 <span data-i18n="search.run">Suchen</span></button>
+          </div>
+        </section>
 
-      <div id="resultsList">
-        <p class="empty">Noch keine Suche gestartet.</p>
+        <section id="tab-route" class="tab-panel" role="tabpanel" hidden>
+          <p class="muted small" data-i18n="route.hint"></p>
+          <form id="routeForm" class="route-form" autocomplete="off">
+            <div class="route-inputs">
+              <input id="routeFrom" type="search" data-i18n-placeholder="route.from" data-i18n-aria="route.from">
+              <input id="routeTo" type="search" data-i18n-placeholder="route.to" data-i18n-aria="route.to" enterkeyhint="search">
+              <button id="routeSwap" class="icon-btn small" type="button" data-i18n-aria="route.swap" data-i18n-title="route.swap">⇅</button>
+            </div>
+            <p class="field-label" data-i18n="route.categories"></p>
+            <div id="routeChips" class="chip-groups"></div>
+            <div class="action-row">
+              <label for="corridorSelect" data-i18n="route.corridor"></label>
+              <select id="corridorSelect"></select>
+              <button class="run-btn" type="submit">🛣 <span data-i18n="route.submit"></span></button>
+            </div>
+          </form>
+          <div class="route-info-row">
+            <p id="routeInfo" class="route-info"></p>
+            <button id="routeClearBtn" class="small-btn hidden" type="button" data-i18n="route.clear"></button>
+          </div>
+        </section>
+
+        <section id="resultsSection" class="results">
+          <div class="results-header">
+            <div class="results-title">
+              <h2><span data-i18n="results.title">Ergebnisse</span> <span id="resultCount" class="result-count"></span></h2>
+              <p id="centerText"></p>
+            </div>
+            <button id="sortBtn" class="small-btn" type="button"></button>
+          </div>
+          <div id="filterRow" class="filter-row" role="group" data-i18n-aria="filter.label"></div>
+          <div id="warningBox" class="warning hidden"></div>
+          <div id="resultsList" class="results-list" aria-live="polite"></div>
+          <button id="moreResultsBtn" class="more-btn hidden" type="button"></button>
+        </section>
+
+        <section id="tab-favorites" class="tab-panel" role="tabpanel" hidden>
+          <div class="panel-head">
+            <h2 data-i18n="trip.title">Reisen</h2>
+            <button id="newTripBtn" class="small-btn" type="button">＋ <span data-i18n="trip.new">Neue Reise</span></button>
+          </div>
+          <div id="tripList" class="trip-list"></div>
+          <div class="panel-head">
+            <h2><span data-i18n="fav.all">Alle Favoriten</span> <span id="favCount" class="result-count"></span></h2>
+          </div>
+          <div class="btn-row">
+            <button id="exportJsonBtn" class="act" type="button">⬇ <span data-i18n="fav.exportJson"></span></button>
+            <button id="exportGpxBtn" class="act" type="button">⬇ <span data-i18n="fav.exportGpx"></span></button>
+            <button id="importBtn" class="act" type="button">⬆ <span data-i18n="fav.import"></span></button>
+          </div>
+          <div id="favList" class="results-list"></div>
+        </section>
+
+        <section id="tab-more" class="tab-panel" role="tabpanel" hidden>
+          <div class="setting">
+            <label for="langSelect" data-i18n="more.language">Sprache</label>
+            <select id="langSelect"></select>
+          </div>
+
+          <h2 data-i18n="more.offline">Offline-Gebiete</h2>
+          <p class="muted small" data-i18n="more.offlineInfo"></p>
+          <div class="btn-row">
+            <button id="saveAreaBtn" class="run-btn" type="button">💾 <span data-i18n="more.saveArea"></span></button>
+            <span id="areaProgress" class="muted small" aria-live="polite"></span>
+          </div>
+          <div id="areaList" class="area-list"></div>
+
+          <h2 data-i18n="more.data">Daten &amp; Backup</h2>
+          <div class="btn-row">
+            <button id="exportJsonBtn2" class="act" type="button">⬇ <span data-i18n="fav.exportJson"></span></button>
+            <button id="importBtn2" class="act" type="button">⬆ <span data-i18n="fav.import"></span></button>
+            <button id="clearCacheBtn" class="act" type="button">🧹 <span data-i18n="more.clearCache"></span></button>
+          </div>
+
+          <h2 data-i18n="more.allemans"></h2>
+          <button id="allemansBtn" class="act" type="button">⚖️ <span data-i18n="allemans.title"></span></button>
+
+          <h2 data-i18n="more.about">Über die App</h2>
+          <p class="muted small" data-i18n="more.sources"></p>
+          <p class="muted small" data-i18n="more.disclaimer"></p>
+          <p class="muted small" id="versionText"></p>
+        </section>
       </div>
     </aside>
   </main>
 </div>
 
-<template id="resultItemTemplate">
-  <article class="result-card">
-    <div class="card-body">
-      <div class="card-top">
-        <div class="card-icon"></div>
-        <div class="card-info">
-          <strong class="result-title"></strong>
-          <span class="result-meta"></span>
-          <span class="result-badges"></span>
-          <span class="result-extra"></span>
-        </div>
-      </div>
-    </div>
-    <div class="card-divider"></div>
-    <div class="card-actions">
-      <a class="maps-link" target="_blank" rel="noopener">📍 Google Maps</a>
-      <a class="osm-link" target="_blank" rel="noopener">🗺 OSM</a>
-      <button class="fav-btn">☆ Favorit</button>
-      <button class="note-btn">✏️ Notiz</button>
-      <button class="share-btn">↗ Teilen</button>
-    </div>
-  </article>
-</template>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<dialog id="noteDialog" class="note-dialog">
+<dialog id="noteDialog" class="dialog">
   <form method="dialog">
-    <div class="note-header">
-      <p id="noteDialogLabel"></p>
+    <div class="dialog-head"><p id="noteDialogLabel"></p></div>
+    <div class="dialog-body">
+      <textarea id="noteDialogText" rows="4" data-i18n-placeholder="note.placeholder" data-i18n-aria="note.placeholder"></textarea>
     </div>
-    <div class="note-body">
-      <textarea id="noteDialogText" rows="4" placeholder="Notiz eingeben …"></textarea>
-    </div>
-    <div class="note-footer">
-      <button value="cancel">Abbrechen</button>
-      <button value="save" class="save-btn">Speichern</button>
+    <div class="dialog-foot">
+      <button value="cancel" data-i18n="common.cancel">Abbrechen</button>
+      <button value="save" class="primary" data-i18n="common.save">Speichern</button>
     </div>
   </form>
 </dialog>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
-<script src="js/app.js?v=3.1"></script>
+<dialog id="detailDialog" class="dialog wide" aria-labelledby="detailTitle">
+  <form method="dialog" class="dialog-close"><button data-i18n-aria="common.close" data-i18n-title="common.close">✕</button></form>
+  <div id="detailContent" class="dialog-body"></div>
+</dialog>
+
+<dialog id="tripDialog" class="dialog">
+  <form method="dialog" class="dialog-close"><button data-i18n-aria="common.close" data-i18n-title="common.close">✕</button></form>
+  <div class="dialog-head"><p data-i18n="trip.addTo"></p></div>
+  <div class="dialog-body">
+    <div id="tripChoices" class="choices"></div>
+    <div class="new-trip">
+      <input id="tripNewName" type="text" data-i18n-aria="trip.newName">
+      <button id="tripCreateBtn" class="run-btn" type="button">＋ <span data-i18n="trip.new"></span></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="weatherDialog" class="dialog">
+  <form method="dialog" class="dialog-close"><button data-i18n-aria="common.close" data-i18n-title="common.close">✕</button></form>
+  <div class="dialog-head"><p data-i18n="weather.title"></p></div>
+  <div id="weatherContent" class="dialog-body"></div>
+</dialog>
+
+<dialog id="infoDialog" class="dialog wide">
+  <form method="dialog" class="dialog-close"><button data-i18n-aria="common.close" data-i18n-title="common.close">✕</button></form>
+  <div id="infoContent" class="dialog-body"></div>
+</dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="vendor/markercluster/leaflet.markercluster.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

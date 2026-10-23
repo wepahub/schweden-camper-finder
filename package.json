@@ -1,0 +1,12 @@
+{
+  "name": "schweden-camper-finder",
+  "version": "4.0.0",
+  "private": true,
+  "description": "OSM-basierter Camper-Helfer für Schweden und Skandinavien",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint js tests service-worker.js",
+    "start": "npx http-server -c-1 -p 8080 ."
+  }
+}
