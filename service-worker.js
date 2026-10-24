@@ -1,6 +1,6 @@
 /* ── Service Worker: App offline verfügbar, Updates kommen sofort an ── */
 
-const VERSION = "4.0.0";
+const VERSION = "4.0.1";
 const SHELL_CACHE = `scf-shell-${VERSION}`;
 const TILE_CACHE = "scf-tiles-v1";
 const KEEP = [SHELL_CACHE, TILE_CACHE, "scf-data-v1", "scf-areas-v1"];

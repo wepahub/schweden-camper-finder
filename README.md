@@ -91,6 +91,8 @@ npm run lint     # ESLint (falls installiert)
 ## Neu in v4.0
 
 - Komplett überarbeitete Oberfläche: Vollbildkarte mit Bottom Sheet, Tabs Umgebung / Route / Favoriten / Mehr
+- Helles, nordisches Design passend zur Karte, automatischer Dunkelmodus; Modi als große Kacheln, „Suchen“ immer direkt sichtbar
+- Klare Rückmeldung beim Suchen: Spinner im gedrückten Knopf, pulsierender Suchradius, Platzhalter-Karten, Meldung „✓ 10 Treffer“ (auf Android mit kurzer Vibration)
 - Neue Kategorien: Entsorgung, Tankstelle (LPG), Dusche, Wäscherei, Ladestation, Apotheke, Werkstatt, Recycling, Schutzhütte, Grillplatz, Aussicht
 - Suche entlang der Route, Offline-Gebiete, Wetter & Sonne, Jedermannsrecht, Sprachen
 - Echte Favoritenliste mit Reisen, GPX/JSON-Export und -Import

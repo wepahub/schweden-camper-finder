@@ -148,16 +148,18 @@ export function buildCard(p, handlers, now = new Date()) {
     )
   );
 
+  // Eine Hauptaktion (Navigation) + kompakte Symbol-Knöpfe mit Beschriftung für Screenreader
+  const iconBtn = (icon, label, onclick, extra = {}) =>
+    h("button", { type: "button", class: `icon-act ${extra.class || ""}`, title: label, "aria-label": label, onclick, ...extra.attrs }, icon);
   const actions = h("div", { class: "card-actions" },
     h("a", { class: "act act-primary", href: primaryNavUrl(p), target: "_blank", rel: "noopener" }, `🧭 ${t("card.nav")}`),
-    h("button", { type: "button", class: "act", onclick: () => handlers.onDetails?.(p) }, `ℹ️ ${t("card.details")}`),
-    h("button", {
-      type: "button", class: `act fav-btn${p.favorite ? " active" : ""}`, "aria-pressed": String(Boolean(p.favorite)),
-      onclick: () => handlers.onFav?.(p)
-    }, `${p.favorite ? "★" : "☆"} ${t("card.fav")}`),
-    h("button", { type: "button", class: "act", onclick: () => handlers.onNote?.(p) }, `✏️ ${t("card.note")}${p.note ? " ✓" : ""}`),
-    handlers.onTrip ? h("button", { type: "button", class: "act", onclick: () => handlers.onTrip(p) }, `🗺 ${t("card.trip")}`) : null,
-    navigator.share ? h("button", { type: "button", class: "act", onclick: () => handlers.onShare?.(p) }, `↗ ${t("card.share")}`) : null
+    h("button", { type: "button", class: "act", onclick: () => handlers.onDetails?.(p) }, t("card.details")),
+    h("span", { class: "act-spacer" }),
+    iconBtn(p.favorite ? "★" : "☆", t("card.fav"), () => handlers.onFav?.(p),
+      { class: p.favorite ? "fav-btn active" : "fav-btn", attrs: { "aria-pressed": String(Boolean(p.favorite)) } }),
+    iconBtn(p.note ? "📝" : "✏️", t("card.note"), () => handlers.onNote?.(p)),
+    handlers.onTrip ? iconBtn("🗺", t("card.trip"), () => handlers.onTrip(p)) : null,
+    navigator.share ? iconBtn("↗", t("card.share"), () => handlers.onShare?.(p)) : null
   );
 
   return h("article", { class: `result-card${isIcaMaxi(p) ? " is-ica" : ""}`, dataset: { id: p.id } },

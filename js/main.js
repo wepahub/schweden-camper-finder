@@ -147,7 +147,7 @@ function buildModeRow() {
     els.modeRow.append(h("button", {
       type: "button", class: "mode-btn", dataset: { mode }, "aria-pressed": "false",
       onclick: () => applyMode(mode)
-    }, `${MODE_ICONS[mode]} ${t(`mode.${mode}`)}`));
+    }, h("span", { class: "mode-icon", "aria-hidden": "true" }, MODE_ICONS[mode]), h("span", { class: "mode-label" }, t(`mode.${mode}`))));
   });
 }
 
@@ -236,8 +236,8 @@ function bindUI() {
   });
 
   els.placeForm.addEventListener("submit", searchPlace);
-  els.searchBtn.addEventListener("click", () => runNearbySearch());
-  els.searchHere.addEventListener("click", () => runNearbySearch());
+  els.searchBtn.addEventListener("click", () => { markWorking(els.searchBtn); runNearbySearch(); });
+  els.searchHere.addEventListener("click", () => { markWorking(els.searchHere); runNearbySearch(); });
   els.radius.addEventListener("change", () => {
     state.radius = Number(els.radius.value);
     storage.saveSettings({ radius: state.radius });
@@ -261,7 +261,7 @@ function bindUI() {
   });
   els.more.addEventListener("click", () => { state.page[resultKind()]++; renderList(); });
 
-  els.routeForm.addEventListener("submit", e => { e.preventDefault(); runRouteSearch(); });
+  els.routeForm.addEventListener("submit", e => { e.preventDefault(); markWorking(els.routeForm.querySelector(".run-btn")); runRouteSearch(); });
   $("#routeSwap").addEventListener("click", () => {
     [els.routeFrom.value, els.routeTo.value] = [els.routeTo.value, els.routeFrom.value];
   });
@@ -317,7 +317,25 @@ const resultKind = () => (state.tab === "route" || state.tab === "nearby" ? stat
 
 /* ── Status ── */
 function setStatus(text) { els.status.textContent = text; }
-function setLoading(on) { els.loading.classList.toggle("on", on); els.loading.setAttribute("aria-busy", String(on)); }
+// Sichtbare Rückmeldung während einer Suche: Ladebalken, Spinner im Knopf, pulsierender Radius
+function setLoading(on) {
+  els.loading.classList.toggle("on", on);
+  document.body.classList.toggle("busy", on);
+  els.sheet.setAttribute("aria-busy", String(on));
+  if (!on) $$(".working").forEach(b => b.classList.remove("working"));
+}
+
+function markWorking(btn) {
+  btn?.classList.add("working");
+  navigator.vibrate?.(8);
+}
+
+function skeletonCards(n = 3) {
+  return Array.from({ length: n }, () => h("div", { class: "result-card skeleton", "aria-hidden": "true" },
+    h("div", { class: "card-body" }, h("div", { class: "card-top" },
+      h("div", { class: "card-icon sk" }),
+      h("div", { class: "card-info" }, h("div", { class: "sk sk-line w70" }), h("div", { class: "sk sk-line w45" }), h("div", { class: "sk sk-line w30" }))))));
+}
 
 function currentLabel() {
   const c = mapView.getCenter();
@@ -365,6 +383,7 @@ function renderCenterText() {
 /* ── Modi & Kategorien ── */
 function applyMode(mode) {
   state.activeMode = mode;
+  markWorking(els.modeRow.querySelector(`[data-mode="${mode}"]`));
   state.categories = new Set(MODES[mode]);
   syncChips(els.chipGroups, state.categories);
   updateModeButtons();
@@ -456,7 +475,7 @@ function choosePlace(p) {
 /* ── Suche ── */
 async function runNearbySearch(center = mapView.getCenter()) {
   const categories = [...state.categories];
-  if (!categories.length) { setStatus(t("status.noCategory")); return null; }
+  if (!categories.length) { setStatus(t("status.noCategory")); setLoading(false); return null; }
   const label = currentLabel();
   const area = { type: "circle", lat: center.lat, lon: center.lon, radius: state.radius };
   setStatus(t("status.searching", { radius: dist(state.radius), place: label }));
@@ -481,7 +500,10 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
   const ctrl = new AbortController();
   state.abort = ctrl;
   setLoading(true);
-  if (resultKind() === kind) { clear(els.results).append(h("p", { class: "empty" }, t("results.loading"))); }
+  if (resultKind() === kind) {
+    els.more.classList.add("hidden");
+    clear(els.results).append(h("p", { class: "loading-text" }, t("results.loading")), ...skeletonCards());
+  }
 
   const isLine = area.type === "line";
   const query = buildQuery(area, categories, isLine ? { timeout: 90 } : {});
@@ -535,6 +557,8 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
     if (source === "stale") parts.push(t("status.stale"));
     if (source === "offline") parts.push(t("status.offlineArea"));
     setStatus(parts.join(" · "));
+    toast(results.length ? `✓ ${t("status.results", { n: results.length })}` : t("status.none"), { duration: 2200 });
+    navigator.vibrate?.(results.length ? 15 : [10, 60, 10]);
     return search;
   } catch (err) {
     if (err.name === "AbortError") return null;
@@ -569,9 +593,9 @@ async function resolvePlace(text) {
 
 async function runRouteSearch() {
   const toText = els.routeTo.value.trim();
-  if (!toText) { setStatus(t("route.needTo")); els.routeTo.focus(); return; }
+  if (!toText) { setStatus(t("route.needTo")); setLoading(false); els.routeTo.focus(); return; }
   const categories = [...state.routeCategories];
-  if (!categories.length) { setStatus(t("status.noCategory")); return; }
+  if (!categories.length) { setStatus(t("status.noCategory")); setLoading(false); return; }
   setStatus(t("route.routing"));
   setLoading(true);
   let from, to, r;
@@ -1019,6 +1043,8 @@ function requestCompass() {
 
 /* ── Nächstes WC ── */
 async function nearestToilet() {
+  markWorking(els.nearestWcBtn);
+  setLoading(true);
   setStatus(t("nearestWc.searching"));
   let origin = state.user;
   if (!origin) origin = await currentPosition().catch(() => null);

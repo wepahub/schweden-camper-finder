@@ -10,7 +10,11 @@ export function initSheet(sheet, grip, { onChange } = {}) {
   let suppressClickUntil = 0;
 
   const container = () => sheet.parentElement.clientHeight;
-  const peekPx = () => parseFloat(getComputedStyle(sheet).getPropertyValue("--peek")) || 150;
+  // --peek enthält calc()/env() → nicht parsen, sondern über ein unsichtbares Element messen
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;height:var(--peek);width:0";
+  sheet.parentElement.append(probe);
+  const peekPx = () => probe.offsetHeight || 176;
   const heightFor = s => {
     const H = container();
     if (s === "full") return H - 8;

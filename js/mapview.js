@@ -37,9 +37,11 @@ export class MapView {
     }) : L.layerGroup();
     this.map.addLayer(this.cluster);
 
+    // SVG statt Canvas, damit der Kreis während der Suche per CSS pulsieren kann
     this.radiusCircle = L.circle([center.lat, center.lon], {
-      radius: 5000, color: "#0e6b3d", weight: 2, opacity: 0.7,
-      fillColor: "#10b981", fillOpacity: 0.07, interactive: false
+      radius: 5000, color: "#1f7a4d", weight: 2, opacity: 0.8, dashArray: "6 6",
+      fillColor: "#22c55e", fillOpacity: 0.06, interactive: false,
+      renderer: L.svg(), className: "search-radius"
     });
     this.routeLayer = L.layerGroup().addTo(this.map);
     this.userLayer = L.layerGroup().addTo(this.map);

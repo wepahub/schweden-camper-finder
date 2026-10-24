@@ -24,6 +24,8 @@ export function gpxForPlaces(places, name) {
   })), name);
 }
 
+const stopsLabel = n => (n === 1 ? t("trip.stopOne") : t("trip.stops", { n }));
+
 const fileSafe = s => String(s).replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "export";
 
 /*
@@ -51,7 +53,7 @@ function renderTrips(ctx) {
   }
   all.forEach(trip => {
     const stops = trips.stops(trip);
-    const meta = [t("trip.stops", { n: stops.length })];
+    const meta = [stopsLabel(stops.length)];
     if (stops.length > 1) meta.push(t("trip.total", { km: dist(trips.length(trip)) }));
 
     const stopList = stops.length
@@ -117,7 +119,7 @@ export function openTripDialog(place, { onDone }) {
   };
   trips.all().forEach(trip => {
     list.append(h("button", { type: "button", class: "choice", onclick: () => choose(trip) },
-      h("strong", {}, trip.name), h("span", {}, t("trip.stops", { n: trip.stops.length }))));
+      h("strong", {}, trip.name), h("span", {}, stopsLabel(trip.stops.length))));
   });
   document.getElementById("tripCreateBtn").onclick = () => {
     const name = input.value.trim() || input.placeholder;

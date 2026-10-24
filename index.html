@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1a14">
+  <meta name="theme-color" content="#f4f7f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1a15" media="(prefers-color-scheme: dark)">
   <meta name="description" content="Camper-Helfer für Schweden und Skandinavien: WC, Wasser, Entsorgung, Stellplätze, Tankstellen und mehr – auch entlang der Route und offline.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -50,10 +51,10 @@
       <div class="map-overlay-top">
         <button id="weatherPill" class="weather-pill hidden" type="button"></button>
       </div>
-      <button id="searchHereBtn" class="search-here hidden" type="button">🔄 <span data-i18n="search.here">In diesem Gebiet suchen</span></button>
+      <button id="searchHereBtn" class="search-here hidden" type="button"><span class="btn-ico" aria-hidden="true">🔄</span><span data-i18n="search.here">In diesem Gebiet suchen</span></button>
 
       <div class="map-fabs">
-        <button id="nearestWcBtn" class="fab" type="button" data-i18n-aria="nearestWc.aria" data-i18n-title="nearestWc.aria">🚻</button>
+        <button id="nearestWcBtn" class="fab fab-wc" type="button" data-i18n-aria="nearestWc.aria" data-i18n-title="nearestWc.aria">🚻</button>
         <button id="locateBtn" class="fab" type="button" aria-pressed="false" data-i18n-aria="locate.aria" data-i18n-title="locate.aria">
           <span class="locate-icon" aria-hidden="true"></span>
         </button>
@@ -64,22 +65,24 @@
       <div id="sheetGrip" class="sheet-grip">
         <button class="sheet-handle" type="button" aria-label="Panel"><span></span></button>
         <nav class="tabs" role="tablist">
-          <button class="tab active" role="tab" data-tab="nearby" aria-selected="true" aria-controls="tab-nearby">📍 <span data-i18n="tabs.nearby">Umgebung</span></button>
-          <button class="tab" role="tab" data-tab="route" aria-selected="false" aria-controls="tab-route">🛣 <span data-i18n="tabs.route">Route</span></button>
-          <button class="tab" role="tab" data-tab="favorites" aria-selected="false" aria-controls="tab-favorites">⭐ <span data-i18n="tabs.favorites">Favoriten</span></button>
-          <button class="tab" role="tab" data-tab="more" aria-selected="false" aria-controls="tab-more">☰ <span data-i18n="tabs.more">Mehr</span></button>
+          <button class="tab active" role="tab" data-tab="nearby" aria-selected="true" aria-controls="tab-nearby"><span class="tab-ico" aria-hidden="true">📍</span><span data-i18n="tabs.nearby">Umgebung</span></button>
+          <button class="tab" role="tab" data-tab="route" aria-selected="false" aria-controls="tab-route"><span class="tab-ico" aria-hidden="true">🛣</span><span data-i18n="tabs.route">Route</span></button>
+          <button class="tab" role="tab" data-tab="favorites" aria-selected="false" aria-controls="tab-favorites"><span class="tab-ico" aria-hidden="true">⭐</span><span data-i18n="tabs.favorites">Favoriten</span></button>
+          <button class="tab" role="tab" data-tab="more" aria-selected="false" aria-controls="tab-more"><span class="tab-ico" aria-hidden="true">☰</span><span data-i18n="tabs.more">Mehr</span></button>
         </nav>
       </div>
 
       <div class="sheet-body">
         <section id="tab-nearby" class="tab-panel" role="tabpanel">
           <div id="modeRow" class="mode-row"></div>
-          <div id="chipGroups" class="chip-groups"></div>
           <div class="action-row">
-            <label for="radiusSelect" data-i18n="search.radius">Radius</label>
-            <select id="radiusSelect"></select>
-            <button id="searchBtn" class="run-btn" type="button">🔍 <span data-i18n="search.run">Suchen</span></button>
+            <label class="radius-field">
+              <span data-i18n="search.radius">Radius</span>
+              <select id="radiusSelect"></select>
+            </label>
+            <button id="searchBtn" class="run-btn" type="button"><span class="btn-ico" aria-hidden="true">🔍</span><span data-i18n="search.run">Suchen</span></button>
           </div>
+          <div id="chipGroups" class="chip-groups"></div>
         </section>
 
         <section id="tab-route" class="tab-panel" role="tabpanel" hidden>
@@ -93,9 +96,11 @@
             <p class="field-label" data-i18n="route.categories"></p>
             <div id="routeChips" class="chip-groups"></div>
             <div class="action-row">
-              <label for="corridorSelect" data-i18n="route.corridor"></label>
-              <select id="corridorSelect"></select>
-              <button class="run-btn" type="submit">🛣 <span data-i18n="route.submit"></span></button>
+              <label class="radius-field">
+                <span data-i18n="route.corridor"></span>
+                <select id="corridorSelect"></select>
+              </label>
+              <button class="run-btn" type="submit"><span class="btn-ico" aria-hidden="true">🛣</span><span data-i18n="route.submit"></span></button>
             </div>
           </form>
           <div class="route-info-row">
@@ -144,7 +149,7 @@
           <h2 data-i18n="more.offline">Offline-Gebiete</h2>
           <p class="muted small" data-i18n="more.offlineInfo"></p>
           <div class="btn-row">
-            <button id="saveAreaBtn" class="run-btn" type="button">💾 <span data-i18n="more.saveArea"></span></button>
+            <button id="saveAreaBtn" class="run-btn" type="button"><span class="btn-ico" aria-hidden="true">💾</span><span data-i18n="more.saveArea"></span></button>
             <span id="areaProgress" class="muted small" aria-live="polite"></span>
           </div>
           <div id="areaList" class="area-list"></div>
