@@ -1,6 +1,6 @@
 /* ── Overpass: Abfrage bauen und mit Server-Fallback laden ── */
 
-import { CATEGORIES, OVERPASS_ENDPOINTS, OVERPASS_TIMEOUT_MS, MAX_ELEMENTS } from "./config.js";
+import { CATEGORIES, OVERPASS_ENDPOINTS, OVERPASS_TIMEOUT_MS, OVERPASS_SERVER_TIMEOUT, MAX_ELEMENTS } from "./config.js";
 
 const fix = n => Number(n).toFixed(5);
 
@@ -16,15 +16,15 @@ export function aroundClause(area) {
   return `(around:${r},${fix(area.lat)},${fix(area.lon)})`;
 }
 
-export function buildQuery(area, categoryKeys, { limit = MAX_ELEMENTS, timeout = 25 } = {}) {
+export function buildQuery(area, categoryKeys, { limit = MAX_ELEMENTS, timeout = OVERPASS_SERVER_TIMEOUT } = {}) {
   const around = aroundClause(area);
   const filters = new Set();
   categoryKeys.forEach(k => CATEGORIES[k]?.filters.forEach(f => filters.add(f)));
   const lines = [...filters].map(f => `  nwr${f}${around};`);
-  let q = `[out:json][timeout:${timeout}];\n(\n${lines.join("\n")}\n);\nout tags center qt ${limit};`;
+  let q = `[out:json][timeout:${timeout}];\n(\n${lines.join("\n")}\n);\nout center tags qt ${limit};`;
   if (categoryKeys.some(k => CATEGORIES[k]?.hikingRoutes)) {
     // Wanderrouten + nur die Wegstücke im Suchgebiet → echter nächster Einstieg statt Routen-Mittelpunkt
-    q += `\nrel["route"~"^(hiking|foot)$"]${around}->.hr;\n.hr out body center qt 200;\nway(r.hr)${around};\nout geom qt 4000;`;
+    q += `\n(rel["route"="hiking"]${around};rel["route"="foot"]${around};)->.hr;\n.hr out body center qt 200;\nway(r.hr)${around};\nout geom qt 4000;`;
   }
   return q;
 }
@@ -91,7 +91,7 @@ export function idsQuery(ids) {
   if (byType.node.length) parts.push(`node(id:${byType.node.join(",")});`);
   if (byType.way.length) parts.push(`way(id:${byType.way.join(",")});`);
   if (byType.relation.length) parts.push(`rel(id:${byType.relation.join(",")});`);
-  return parts.length ? `[out:json][timeout:25];\n(${parts.join("")});\nout tags center qt;` : null;
+  return parts.length ? `[out:json][timeout:25];\n(${parts.join("")});\nout center tags qt;` : null;
 }
 
 // FNV-1a – kurzer Schlüssel für den Datencache

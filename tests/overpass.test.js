@@ -1,20 +1,31 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildQuery, aroundClause, fetchOverpass, idsQuery, hashString } from "../js/overpass.js";
+import { CATEGORIES, OVERPASS_TIMEOUT_MS, OVERPASS_SERVER_TIMEOUT } from "../js/config.js";
 
 test("Abfrage nutzt nwr und dedupliziert Filter", () => {
   const q = buildQuery({ type: "circle", lat: 59.85, lon: 17.63, radius: 5000 }, ["toilets", "water", "toilets"]);
   assert.match(q, /nwr\["amenity"="toilets"\]\(around:5000,59\.85000,17\.63000\);/);
   assert.equal((q.match(/"amenity"="toilets"/g) || []).length, 1);
-  assert.match(q, /out tags center qt 1500;/);
+  assert.match(q, /out center tags qt 1500;/);
   assert.doesNotMatch(q, /route/);
 });
 
 test("Wanderwege holen Wegstücke für den nächsten Einstieg", () => {
   const q = buildQuery({ type: "circle", lat: 60, lon: 15, radius: 3000 }, ["hiking"]);
-  assert.match(q, /rel\["route"~"\^\(hiking\|foot\)\$"\]\(around:3000,60\.00000,15\.00000\)->\.hr;/);
+  assert.match(q, /\(rel\["route"="hiking"\]\(around:3000,60\.00000,15\.00000\);rel\["route"="foot"\]\(around:3000,60\.00000,15\.00000\);\)->\.hr;/);
   assert.match(q, /way\(r\.hr\)\(around:3000/);
   assert.match(q, /out geom/);
+});
+
+test("keine regulären Ausdrücke in Tagfiltern (langsam auf Overpass)", () => {
+  const q = buildQuery({ type: "circle", lat: 60, lon: 15, radius: 3000 }, Object.keys(CATEGORIES));
+  assert.doesNotMatch(q, /~/);
+  assert.match(q, /\[timeout:25\]/);
+});
+
+test("App wartet länger als der Server", () => {
+  assert.ok(OVERPASS_TIMEOUT_MS > OVERPASS_SERVER_TIMEOUT * 1000);
 });
 
 test("Linien-Abfrage für die Route", () => {

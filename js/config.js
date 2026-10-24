@@ -10,7 +10,10 @@ export const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter"
 ];
 
-export const OVERPASS_TIMEOUT_MS = 25000;   // pro Server, danach nächster Server
+// Server bricht nach 25 s ab ([timeout:25]); die App wartet etwas länger, damit eine
+// langsame, aber gültige Antwort nicht verloren geht
+export const OVERPASS_SERVER_TIMEOUT = 25;
+export const OVERPASS_TIMEOUT_MS = 40000;
 export const MAX_ELEMENTS = 1500;           // Obergrenze pro Overpass-Antwort
 export const PAGE_SIZE = 40;                // Ergebniskarten pro Seite
 export const DATA_CACHE_MAX_AGE = 6 * 3600 * 1000;
@@ -24,7 +27,9 @@ const is = (key, ...values) => t => values.includes(t[key]);
 const matches = (key, re) => t => re.test(t[key] || "");
 
 /*
-  filters:   Overpass-Tagfilter (werden mit nwr kombiniert)
+  filters:   Overpass-Tagfilter (werden mit nwr kombiniert). Bewusst nur exakte
+             key=value-Filter: Reguläre Ausdrücke zwingen Overpass, alle Objekte mit
+             dem Schlüssel weltweit zu durchsuchen – das ist um Größenordnungen langsamer.
   primary:   Element gehört eindeutig zu dieser Kategorie (z. B. amenity=toilets)
   secondary: Element hat die Eigenschaft nur nebenbei (z. B. Tankstelle mit toilets=yes)
   extra:     zusätzlicher Ausschlussfilter
@@ -37,12 +42,12 @@ export const CATEGORIES = {
   },
   water: {
     icon: "💧", color: "#06b6d4", group: "supply", scoreBase: 50,
-    filters: ['["amenity"~"^(drinking_water|water_point)$"]', '["drinking_water"="yes"]'],
+    filters: ['["amenity"="drinking_water"]', '["amenity"="water_point"]', '["drinking_water"="yes"]'],
     primary: is("amenity", "drinking_water", "water_point"), secondary: is("drinking_water", "yes")
   },
   dump: {
     icon: "🪣", color: "#a16207", group: "supply", scoreBase: 60,
-    filters: ['["amenity"="sanitary_dump_station"]', '["sanitary_dump_station"~"^(yes|public|customers)$"]'],
+    filters: ['["amenity"="sanitary_dump_station"]', '["sanitary_dump_station"="yes"]', '["sanitary_dump_station"="public"]', '["sanitary_dump_station"="customers"]'],
     primary: is("amenity", "sanitary_dump_station"),
     secondary: matches("sanitary_dump_station", /^(yes|public|customers)$/)
   },
@@ -53,12 +58,12 @@ export const CATEGORIES = {
   },
   food: {
     icon: "🛒", color: "#f97316", group: "supply", scoreBase: 40,
-    filters: ['["shop"~"^(supermarket|convenience)$"]'],
+    filters: ['["shop"="supermarket"]', '["shop"="convenience"]'],
     primary: is("shop", "supermarket", "convenience")
   },
   shower: {
     icon: "🚿", color: "#38bdf8", group: "supply", scoreBase: 40,
-    filters: ['["amenity"="shower"]', '["shower"~"^(yes|hot)$"]'],
+    filters: ['["amenity"="shower"]', '["shower"="yes"]', '["shower"="hot"]'],
     primary: is("amenity", "shower"), secondary: is("shower", "yes", "hot")
   },
   laundry: {
@@ -78,7 +83,7 @@ export const CATEGORIES = {
   },
   repair: {
     icon: "🔧", color: "#475569", group: "supply", scoreBase: 30,
-    filters: ['["shop"~"^(car_repair|caravan|tyres)$"]'],
+    filters: ['["shop"="car_repair"]', '["shop"="caravan"]', '["shop"="tyres"]'],
     primary: is("shop", "car_repair", "caravan", "tyres")
   },
   recycling: {
@@ -89,7 +94,7 @@ export const CATEGORIES = {
 
   camping: {
     icon: "🏕", color: "#22c55e", group: "night", scoreBase: 55,
-    filters: ['["tourism"~"^(caravan_site|camp_site)$"]'],
+    filters: ['["tourism"="caravan_site"]', '["tourism"="camp_site"]'],
     primary: is("tourism", "caravan_site", "camp_site")
   },
   parking: {
@@ -105,7 +110,7 @@ export const CATEGORIES = {
   },
   shelter: {
     icon: "🛖", color: "#92400e", group: "night", scoreBase: 40,
-    filters: ['["amenity"="shelter"]', '["tourism"~"^(wilderness_hut|alpine_hut)$"]'],
+    filters: ['["amenity"="shelter"]', '["tourism"="wilderness_hut"]', '["tourism"="alpine_hut"]'],
     primary: t => t.amenity === "shelter" || t.tourism === "wilderness_hut" || t.tourism === "alpine_hut",
     extra: t => t.shelter_type !== "public_transport"
   },
@@ -118,7 +123,7 @@ export const CATEGORIES = {
 
   bathing: {
     icon: "🏖", color: "#facc15", group: "leisure", scoreBase: 45,
-    filters: ['["leisure"~"^(swimming_area|beach_resort)$"]', '["natural"="beach"]'],
+    filters: ['["leisure"="swimming_area"]', '["leisure"="beach_resort"]', '["natural"="beach"]'],
     primary: t => t.leisure === "swimming_area" || t.leisure === "beach_resort" || t.natural === "beach"
   },
   firepit: {

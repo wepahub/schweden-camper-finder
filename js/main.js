@@ -461,7 +461,10 @@ async function runNearbySearch(center = mapView.getCenter()) {
   const area = { type: "circle", lat: center.lat, lon: center.lon, radius: state.radius };
   setStatus(t("status.searching", { radius: dist(state.radius), place: label }));
   mapView.showRadius(center, state.radius);
-  const s = await executeSearch({ kind: "nearby", area, categories, origin: center, label, maxDistance: state.radius });
+  const s = await executeSearch({
+    kind: "nearby", area, categories, origin: center, label, maxDistance: state.radius,
+    retry: () => runNearbySearch(center)
+  });
   if (s) showResults(els.chipGroups, s);
   if (s) {
     refreshWeather(center, label);
@@ -473,7 +476,7 @@ async function runNearbySearch(center = mapView.getCenter()) {
   return s;
 }
 
-async function executeSearch({ kind, area, categories, origin, label, route, maxDistance, normalizeOptions }) {
+async function executeSearch({ kind, area, categories, origin, label, route, maxDistance, normalizeOptions, retry }) {
   state.abort?.abort();
   const ctrl = new AbortController();
   state.abort = ctrl;
@@ -481,7 +484,7 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
   if (resultKind() === kind) { clear(els.results).append(h("p", { class: "empty" }, t("results.loading"))); }
 
   const isLine = area.type === "line";
-  const query = buildQuery(area, categories, { timeout: isLine ? 90 : 25 });
+  const query = buildQuery(area, categories, isLine ? { timeout: 90 } : {});
   let server = "";
   const slowTimer = setTimeout(() => setStatus(t("status.slow", { server })), 8000);
 
@@ -493,7 +496,7 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
       try {
         const data = await fetchOverpass(query, {
           signal: ctrl.signal,
-          timeoutMs: isLine ? 90000 : OVERPASS_TIMEOUT_MS,
+          timeoutMs: isLine ? 105000 : OVERPASS_TIMEOUT_MS,
           onAttempt: ep => { server = new URL(ep).hostname; }
         });
         elements = data.elements || [];
@@ -535,9 +538,11 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
     return search;
   } catch (err) {
     if (err.name === "AbortError") return null;
-    console.error(err);
-    setStatus(t("status.failed"));
+    console.error(err, err.details);
+    const allTimeouts = err.details?.length && err.details.every(d => /Timeout|HTTP (429|504)/.test(d));
+    setStatus(t(allTimeouts ? "status.busy" : "status.failed"));
     if (resultKind() === kind) clear(els.results).append(h("p", { class: "empty" }, t("results.loadFailed")));
+    if (retry) toast(t(allTimeouts ? "status.busy" : "status.failed"), { duration: 10000, action: { label: t("common.retry"), onClick: retry } });
     return null;
   } finally {
     clearTimeout(slowTimer);
@@ -606,7 +611,8 @@ async function runRouteSearch() {
     area: { type: "line", points: coarse, radius: state.corridor + tol },
     categories, origin: from, label: `${from.label} → ${to.label}`,
     route: routeData, maxDistance: state.corridor,
-    normalizeOptions: { pickPoint: nearestToLine(fine) }
+    normalizeOptions: { pickPoint: nearestToLine(fine) },
+    retry: () => runRouteSearch()
   });
   if (s) showResults(els.routeChips, s);
 }

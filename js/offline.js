@@ -47,7 +47,7 @@ export async function saveArea({ center, label, radius = OFFLINE_AREA_RADIUS, la
   if (!hasCaches()) throw new Error("Cache API nicht verfügbar");
   const query = buildQuery({ type: "circle", lat: center.lat, lon: center.lon, radius }, OFFLINE_CATEGORIES, { limit: 8000, timeout: 90 });
   onProgress?.({ step: "data" });
-  const data = await fetchOverpass(query, { timeoutMs: 90000 });
+  const data = await fetchOverpass(query, { timeoutMs: 105000 });
   const elements = data.elements || [];
   const id = `a${Date.now().toString(36)}`;
   await (await caches.open(AREA_CACHE)).put(areaKey(id), jsonResponse(elements));
