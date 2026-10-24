@@ -486,7 +486,7 @@ async function executeSearch({ kind, area, categories, origin, label, route, max
   const isLine = area.type === "line";
   const query = buildQuery(area, categories, isLine ? { timeout: 90 } : {});
   let server = "";
-  const slowTimer = setTimeout(() => setStatus(t("status.slow", { server })), 8000);
+  const slowTimer = setTimeout(() => setStatus(t("status.slow", { server })), 12000);
 
   try {
     let elements, source = "live";

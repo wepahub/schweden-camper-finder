@@ -33,52 +33,102 @@ export class OverpassError extends Error {
   constructor(message, details) { super(message); this.name = "OverpassError"; this.details = details; }
 }
 
-let preferred = null;
-try { preferred = localStorage.getItem("scf:v4:endpoint"); } catch { /* ohne Storage */ }
+/*
+  Antwortzeiten pro Server (gleitender Mittelwert) – der bei dir schnellste
+  Server wird zuerst gefragt. Fehler zählen als sehr langsam.
+*/
+const STATS_KEY = "scf:v4:overpassStats";
+let stats = {};
+try { stats = JSON.parse(localStorage.getItem(STATS_KEY) || "{}") || {}; } catch { stats = {}; }
 
-function orderedEndpoints() {
-  if (!preferred || !OVERPASS_ENDPOINTS.includes(preferred)) return OVERPASS_ENDPOINTS;
-  return [preferred, ...OVERPASS_ENDPOINTS.filter(e => e !== preferred)];
+function record(endpoint, ms) {
+  const prev = stats[endpoint];
+  stats[endpoint] = prev == null ? ms : Math.round(prev * 0.6 + ms * 0.4);
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* egal */ }
 }
 
+export function orderedEndpoints() {
+  // Unbekannte Server behalten ihre Reihenfolge aus der Konfiguration
+  return OVERPASS_ENDPOINTS
+    .map((e, i) => ({ e, score: stats[e] ?? 8000 + i }))
+    .sort((a, b) => a.score - b.score)
+    .map(x => x.e);
+}
+
+export function resetOverpassStats() { stats = {}; }
+
 /*
-  Probiert die Server der Reihe nach. Jeder Server bekommt ein eigenes Timeout,
-  damit ein hängender Server nicht die ganze Suche blockiert.
+  Fragt zuerst den schnellsten Server. Kommt nach hedgeMs keine Antwort, wird
+  zusätzlich der nächste Server gefragt („hedged request“); die erste gültige
+  Antwort gewinnt, die anderen Anfragen werden abgebrochen. Fällt ein Server
+  aus, kommt sofort der nächste dran. Jeder Server hat ein eigenes Timeout.
 */
-export async function fetchOverpass(query, { signal, timeoutMs = OVERPASS_TIMEOUT_MS, fetchImpl = fetch, onAttempt } = {}) {
-  const errors = [];
-  for (const endpoint of orderedEndpoints()) {
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    const ctrl = new AbortController();
-    const onAbort = () => ctrl.abort();
-    signal?.addEventListener("abort", onAbort, { once: true });
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    onAttempt?.(endpoint);
-    try {
-      const res = await fetchImpl(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: new URLSearchParams({ data: query }),
-        signal: ctrl.signal
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      // Overpass meldet Laufzeitfehler mit HTTP 200 im Feld "remark"
-      if (data.remark && /runtime error|timed out|out of memory|error/i.test(data.remark)) {
-        throw new Error(data.remark);
+export function fetchOverpass(query, {
+  signal, timeoutMs = OVERPASS_TIMEOUT_MS, hedgeMs = 5000, fetchImpl = fetch, onAttempt
+} = {}) {
+  const endpoints = orderedEndpoints();
+  return new Promise((resolve, reject) => {
+    const errors = [];
+    const ctrls = [];
+    let settled = false, started = 0, failed = 0, hedgeTimer;
+
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hedgeTimer);
+      ctrls.forEach(c => c.abort());
+      signal?.removeEventListener("abort", onUserAbort);
+      fn(value);
+    };
+    const onUserAbort = () => finish(reject, new DOMException("Aborted", "AbortError"));
+    if (signal?.aborted) { onUserAbort(); return; }
+    signal?.addEventListener("abort", onUserAbort, { once: true });
+
+    const startNext = () => {
+      if (settled || started >= endpoints.length) return;
+      const endpoint = endpoints[started++];
+      clearTimeout(hedgeTimer);
+      if (started < endpoints.length) hedgeTimer = setTimeout(startNext, hedgeMs);
+      attempt(endpoint);
+    };
+
+    const attempt = async endpoint => {
+      const ctrl = new AbortController();
+      ctrls.push(ctrl);
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeoutMs);
+      const t0 = Date.now();
+      onAttempt?.(endpoint);
+      try {
+        const res = await fetchImpl(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body: new URLSearchParams({ data: query }),
+          signal: ctrl.signal
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        // Overpass meldet Laufzeitfehler mit HTTP 200 im Feld "remark"
+        if (data.remark && /runtime error|timed out|out of memory|error/i.test(data.remark)) {
+          throw new Error(data.remark);
+        }
+        if (settled) return;
+        record(endpoint, Date.now() - t0);
+        finish(resolve, data);
+      } catch (err) {
+        if (settled) return; // abgebrochen, weil ein anderer Server schneller war
+        record(endpoint, Math.max(timeoutMs, 30000));
+        errors.push(`${new URL(endpoint).hostname}: ${timedOut || err.name === "AbortError" ? "Timeout" : err.message}`);
+        failed++;
+        if (failed >= endpoints.length) finish(reject, new OverpassError("Overpass nicht erreichbar", errors));
+        else startNext();
+      } finally {
+        clearTimeout(timer);
       }
-      preferred = endpoint;
-      try { localStorage.setItem("scf:v4:endpoint", endpoint); } catch { /* egal */ }
-      return data;
-    } catch (err) {
-      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-      errors.push(`${new URL(endpoint).hostname}: ${err.name === "AbortError" ? "Timeout" : err.message}`);
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener("abort", onAbort);
-    }
-  }
-  throw new OverpassError("Overpass nicht erreichbar", errors);
+    };
+
+    startNext();
+  });
 }
 
 export function idsQuery(ids) {

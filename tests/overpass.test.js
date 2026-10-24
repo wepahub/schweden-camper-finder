@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildQuery, aroundClause, fetchOverpass, idsQuery, hashString } from "../js/overpass.js";
+import { buildQuery, aroundClause, fetchOverpass, idsQuery, hashString, orderedEndpoints, resetOverpassStats } from "../js/overpass.js";
 import { CATEGORIES, OVERPASS_TIMEOUT_MS, OVERPASS_SERVER_TIMEOUT } from "../js/config.js";
 
 test("Abfrage nutzt nwr und dedupliziert Filter", () => {
@@ -34,6 +34,7 @@ test("Linien-Abfrage für die Route", () => {
 });
 
 test("Server-Fallback: Timeout und Laufzeitfehler führen zum nächsten Server", async () => {
+  resetOverpassStats();
   const calls = [];
   const fetchImpl = async (url, opts) => {
     calls.push(url);
@@ -47,6 +48,23 @@ test("Server-Fallback: Timeout und Laufzeitfehler führen zum nächsten Server",
   const data = await fetchOverpass("x", { fetchImpl, timeoutMs: 30 });
   assert.equal(calls.length, 3);
   assert.equal(data.elements.length, 1);
+});
+
+test("langsamer Server: zweiter wird parallel gefragt, schnellste Antwort gewinnt", async () => {
+  resetOverpassStats();
+  const [first, second] = orderedEndpoints();
+  let firstAborted = false;
+  const fetchImpl = (url, opts) => new Promise((resolve, reject) => {
+    opts.signal.addEventListener("abort", () => { if (url === first) firstAborted = true; reject(new DOMException("Aborted", "AbortError")); });
+    const delay = url === first ? 500 : 10;
+    setTimeout(() => resolve({ ok: true, json: async () => ({ elements: [{ type: "node", id: url === first ? 1 : 2 }] }) }), delay);
+  });
+  const data = await fetchOverpass("x", { fetchImpl, hedgeMs: 30, timeoutMs: 2000 });
+  assert.equal(data.elements[0].id, 2);
+  assert.equal(firstAborted, true);
+  // beim nächsten Mal wird der schnellere Server zuerst gefragt
+  assert.equal(orderedEndpoints()[0], second);
+  resetOverpassStats();
 });
 
 test("alle Server kaputt → OverpassError mit Details", async () => {
